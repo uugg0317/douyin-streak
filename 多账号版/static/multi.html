@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>抖音自动续火花 · 多账号控制台</title>
+<link rel="icon" href="/static/favicon.svg">
+<link rel="stylesheet" href="/static/vendor/element-plus.css">
+<link rel="stylesheet" href="/static/multi.css?v=20261002-ui4">
+</head>
+<body>
+<div class="fluid-backdrop" aria-hidden="true"><canvas id="fluid-canvas"></canvas></div>
+<div class="backdrop-shade" aria-hidden="true"></div>
+<div id="app" v-cloak>
+  <template>
+    <header class="app-header">
+      <div class="header-inner">
+        <div class="brand"><div class="brand-icon"><img src="/static/fire-icon.png" alt=""></div><div><div class="brand-title">抖音自动续火花</div><small class="brand-subtitle">多账号控制台 · 每一份连接，都值得保留</small></div></div>
+        <div class="header-tools">
+          <span class="chip" :class="running?'warn':'ok'"><span class="status-dot" :class="{busy:running}"></span>{{ running?'任务运行中':'服务在线' }}</span>
+          <button class="btn icon-button" aria-label="刷新当前页面" title="刷新当前页面" :disabled="loading||navigationBusy||savingFriends||savingConfig" @click="refreshCurrent"><span v-html="icon('refresh')"></span></button>
+        </div>
+      </div>
+    </header>
+    <div class="app-shell">
+      <nav class="side-nav" aria-label="主要功能">
+        <div class="nav-label">WORKSPACE</div>
+        <button v-for="item in desktopNav" :key="item.id" :class="{active:page===item.id}" :aria-current="page===item.id?'page':undefined" :data-testid="'nav-'+item.id" @click="navigate(item.id)"><span v-html="icon(item.icon)"></span>{{ item.label }}</button>
+        <div class="nav-divider"></div><div class="nav-note">账号独立管理<br>任务有序进行</div>
+      </nav>
+      <main class="main-view" :aria-busy="loading">
+        <p class="notice" v-if="loading&&!lastUpdated" role="status">正在同步本机账号状态…</p>
+        <section class="account-context" aria-label="当前账号">
+          <div class="context-copy"><div class="context-label">当前管理账号</div><div class="context-name">{{ selectedAccount?selectedAccount.display_name:'请选择账号' }} <span class="chip" v-if="selectedAccount" :class="acctTagType(selectedAccount)==='success'?'ok':'warn'">{{ acctTagText(selectedAccount) }}</span></div></div>
+          <div class="context-tools">
+            <label class="sr-only" for="account-selector">切换管理账号</label>
+            <select id="account-selector" class="account-selector" data-testid="account-selector" :value="selectedAccountId" :disabled="navigationBusy||savingFriends||savingConfig||guardVisible||!accounts.length" @change="requestAccountChange">
+              <option value="" disabled>选择管理账号</option><option v-for="a in accounts" :key="a.id" :value="a.id">{{ a.display_name }} · {{ a.id }}{{ a.enabled?'':' · 已停用' }}</option>
+            </select>
+            <button class="btn subtle" aria-label="添加账号" :disabled="accounts.length>=maxAccounts||credentialActive" @click="addDialog=true"><span v-html="icon('plus')"></span>添加账号</button>
+          </div>
+        </section>
+        <div class="notice error" v-if="loadError" role="alert">{{ loadError }} <button class="btn subtle" @click="load()">重试</button></div>
+        <div class="page-head"><div><p class="eyebrow">MULTI ACCOUNT / {{ page==='overview'?'OVERVIEW':page.toUpperCase() }}</p><h1 class="page-title">{{ currentNav.label==='概览'?'运行概览':currentNav.label }}</h1><p class="page-description">{{ currentNav.description }}</p></div><span class="chip warn" v-if="hasUnsaved">有未保存的修改</span></div>
+        <div class="notice warning credential-task-notice" v-if="credentialActive&&page!=='credentials'" role="status" data-testid="credential-task-notice">
+          <span><strong>{{ credentialTask?credentialTask.display_name:'目标账号' }}</strong> · {{ credentialStatusLabel }}<small>切页或切换账号不会更改这次登录的保存目标。</small></span>
+          <button class="btn" @click="openCredentialTask">{{ credentialTask&&credentialTask.status==='ready'?'核对并保存登录':'查看登录任务' }}<span v-html="icon('arrow')"></span></button>
+        </div>
+        <section class="panel credential-task" v-if="page==='credentials'&&credentialTaskVisible" aria-labelledby="credential-task-title" data-testid="credential-task">
+          <div class="panel-head"><div><p class="eyebrow">BROWSER LOGIN</p><h2 class="panel-title" id="credential-task-title">{{ credentialStatusLabel }}</h2><p class="panel-description">浏览器将在运行本服务的电脑上打开。</p></div><span class="chip" :class="credentialTask.status==='success'?'ok':['failed','timeout'].includes(credentialTask.status)?'danger':'warn'">{{ credentialActive?'进行中':'已结束' }}</span></div>
+          <div class="credential-target"><span>将保存到</span><strong data-testid="credential-target">{{ credentialTask.display_name }}</strong><small>本次登录的目标已固定，不会随顶部账号切换。</small></div>
+          <p class="notice warning" v-if="credentialTargetMismatch">当前页面选中的账号与这次登录目标不同。确认保存仍只会更新「{{ credentialTask.display_name }}」。</p>
+          <p class="credential-instruction" role="status" v-if="credentialTask.status==='starting'">正在准备一个干净的登录浏览器，请在服务电脑上等待窗口打开。</p>
+          <p class="credential-instruction" role="status" v-else-if="credentialTask.status==='waiting'">请由本人在打开的浏览器中手动登录抖音。完成后回到这里核对并保存。</p>
+          <div class="credential-check" v-else-if="credentialTask.status==='ready'"><p>已检测到登录信息，尚未写入账号凭据。</p><p><strong>请核对浏览器中登录的抖音账号，工具不自动核实身份。</strong></p><p class="field-help">核对无误后，再确认保存到「{{ credentialTask.display_name }}」。</p></div>
+          <p class="credential-instruction" role="status" v-else-if="credentialTask.status==='saving'">正在保存到「{{ credentialTask.display_name }}」，请稍候。</p>
+          <p class="credential-instruction" role="status" v-else-if="credentialTask.status==='cancelling'">正在取消这次浏览器登录，请稍候。</p>
+          <p class="credential-instruction" role="status" v-else-if="credentialTask.status==='stopping'">正在结束任务并关闭本次登录浏览器，请稍候。</p>
+          <p class="credential-instruction" role="status" v-else-if="credentialTask.status==='success'">新登录凭据已保存到「{{ credentialTask.display_name }}」。可以继续采集好友和演练。</p>
+          <p class="credential-instruction" role="status" v-else>本次任务已结束，原登录凭据未更改。可以重新发起浏览器登录。</p>
+          <div class="credential-deadline" v-if="credentialActive"><div><span>五分钟登录期限</span><strong :class="{'text-danger':credentialRemainingSeconds<30}">{{ credentialRemainingSeconds?'剩余 '+credentialCountdown:'期限已到，正在同步结果' }}</strong></div><progress :value="credentialProgress" max="300" aria-label="五分钟登录期限进度"></progress></div>
+          <p class="notice error" v-if="credentialError" role="alert" data-testid="credential-error">{{ credentialError }}</p>
+          <div class="credential-actions">
+            <button class="btn primary" data-testid="credential-confirm" v-if="credentialTask.status==='ready'||credentialTask.status==='saving'" :disabled="!credentialReady" @click="confirmCredentialExtract"><span v-html="icon('check')"></span>{{ credentialTask.status==='saving'?'正在保存…':'我已核对，保存到 '+credentialTask.display_name }}</button>
+            <button class="btn" data-testid="credential-cancel" v-if="credentialActive" :disabled="!credentialTask.job_id||credentialActionBusy||credentialStarting||credentialTask.status==='stopping'" @click="cancelCredentialExtract">{{ credentialTask.status==='cancelling'||credentialTask.status==='stopping'?'正在结束…':'取消这次登录' }}</button>
+            <button class="btn subtle" :disabled="credentialStarting||credentialActionBusy" @click="pollCredentialExtract"><span v-html="icon('refresh')"></span>刷新登录状态</button>
+            <button class="btn subtle" v-if="!credentialActive" @click="dismissCredentialTask">收起结果</button>
+          </div>
+          <p class="field-help">只有点击确认后才会保存；取消或超时会保留原登录凭据。</p>
+        </section>
+        <transition name="page" mode="out-in">
+          <div class="page-content" :key="page" :data-testid="'page-'+page">
+            <template v-if="page==='overview'">
+              <div class="stats-grid">
+                <div class="stat-box"><div class="stat-label">账号总数</div><div class="stat-value">{{ accounts.length }}<small>/ {{ maxAccounts }}</small></div><div class="stat-foot">{{ enabledCount }} 个账号已启用</div></div>
+                <div class="stat-box"><div class="stat-label">凭据已接入</div><div class="stat-value">{{ readyCount }}<small>个账号</small></div><div class="stat-foot">各账号登录状态独立管理</div></div>
+                <div class="stat-box"><div class="stat-label">已选好友</div><div class="stat-value">{{ selectedFriendCount }}<small>位</small></div><div class="stat-foot">所有账号的已保存选择</div></div>
+                <div class="stat-box"><div class="stat-label">需要关注</div><div class="stat-value" :class="attentionCount?'text-danger':''">{{ attentionCount }}<small>个账号</small></div><div class="stat-foot">待接入、冷却或人工处理</div></div>
+              </div>
+              <section class="panel">
+                <div class="panel-head"><div><h2 class="panel-title"><span v-html="icon('clock')"></span>任务动态</h2><p class="panel-description">{{ running?'正在执行，切换页面不会中断任务。':'当前空闲，可以先演练检查账号。' }}</p></div><button class="btn subtle" @click="navigate('tasks')">查看任务<span v-html="icon('arrow')"></span></button></div>
+                <div class="status-strip"><span class="chip" :class="running?'warn':'ok'">{{ running?'运行中':'空闲' }}</span><span class="muted" v-if="autoRunEnabled===false">定时发送已关闭</span><span class="muted" v-else-if="autoRunEnabled===true&&nextRun">下次定时发送 {{ fmt(nextRun) }}</span><span class="muted" v-else>定时开关状态未确认</span><span class="muted" v-if="lastSummary">最近一轮：成功 {{ summaryTotals.ok||0 }} · 失败 {{ summaryTotals.failed||0 }} · 待确认 {{ summaryTotals.unknown||0 }}</span><span class="muted" v-else>还没有发送记录</span></div>
+              </section>
+              <section>
+                <div class="section-head"><h2>你的账号</h2><button class="btn subtle" @click="navigate('accounts')">管理账号<span v-html="icon('arrow')"></span></button></div>
+                <div class="account-grid" v-if="accounts.length">
+                  <article class="account-card" v-for="a in accounts" :key="a.id" :class="{selected:a.id===selectedAccountId,disabled:!a.enabled}">
+                    <div class="account-card-head"><div class="avatar">{{ (a.display_name||a.id).slice(0,1) }}</div><div class="account-info"><h3 class="account-name">{{ a.display_name }}</h3><div class="account-id">{{ a.enabled?'已启用':'已停用' }} · {{ a.id }}</div></div><span class="chip" :class="acctTagType(a)==='success'?'ok':'warn'">{{ acctTagText(a) }}</span></div>
+                    <div class="account-metrics"><div class="metric"><div class="k">凭据</div><div class="v" :class="a.has_state?'text-success':'text-danger'">{{ a.has_state?'已接入':'未接入' }}</div></div><div class="metric"><div class="k">已选好友</div><div class="v">{{ a.ledger_selected||0 }}<small> / {{ a.ledger_total||0 }}</small></div></div><div class="metric"><div class="k">连续失败</div><div class="v">{{ a.consecutive_failures||0 }}</div></div></div>
+                    <div class="last-run"><template v-if="a.manual_required">需要人工核对账号状态与待确认消息。</template><template v-else-if="isPaused(a)">冷却至 {{ fmt(a.auto_paused_until) }}</template><template v-else>{{ lastRunText(a) }}</template></div>
+                    <div class="card-actions"><button class="btn" @click="openFriends(a)">管理好友</button><button class="btn primary" @click="navigate('accounts',a.id)">账号详情<span v-html="icon('arrow')"></span></button></div>
+                  </article>
+                </div>
+                <div class="empty-state" v-else><div class="empty-icon" v-html="icon('users')"></div><h2>从第一个账号开始</h2><p>添加账号后，接入凭据、选择好友，就可以开始演练。</p><button class="btn primary" @click="addDialog=true">添加账号</button></div>
+              </section>
+            </template>
+            <template v-else-if="page==='accounts'">
+              <section class="panel" v-if="selectedAccount">
+                <div class="panel-head"><div><h2 class="panel-title">{{ selectedAccount.display_name }}</h2><p class="panel-description">{{ selectedAccount.id }} · 当前管理账号</p></div><el-switch :model-value="selectedAccount.enabled" :disabled="accountBusy(selectedAccount)" aria-label="启用当前账号" @change="v=>toggleEnabled(selectedAccount,v)"></el-switch></div>
+                <div class="account-metrics"><div class="metric"><div class="k">登录状态</div><div class="v">{{ acctTagText(selectedAccount) }}</div></div><div class="metric"><div class="k">已选好友</div><div class="v">{{ selectedAccount.ledger_selected||0 }}<small> / {{ selectedAccount.ledger_total||0 }}</small></div></div><div class="metric"><div class="k">最近运行</div><div class="v" style="font-size:13px;">{{ selectedAccount.last_run?fmt(selectedAccount.last_run.at):'暂无记录' }}</div></div></div>
+                <div class="card-actions" style="margin-top:20px;"><button class="btn" :disabled="accountBusy(selectedAccount)" @click="openEdit(selectedAccount)">账号设置</button><button class="btn" :disabled="accounts.length<2||accountBusy(selectedAccount)" @click="openCopy()">复制配置</button><button class="btn" @click="navigate('credentials')">管理凭据</button><button class="btn subtle danger" :disabled="accountBusy(selectedAccount)" @click="removeAccount(selectedAccount)">移除账号</button></div>
+                <div class="notice warning" v-if="selectedAccount.manual_required||isPaused(selectedAccount)" style="margin-top:20px;"><span>先核对账号安全状态和待确认消息，再恢复任务。</span><button class="btn" :disabled="accountBusy(selectedAccount)" @click="reviewAccount()">核对后恢复</button></div>
+              </section>
+              <section class="panel"><div class="panel-head"><div><h2 class="panel-title">全部账号</h2><p class="panel-description">点击账号切换管理；停用后定时任务会跳过。</p></div><span class="chip">{{ accounts.length }} / {{ maxAccounts }}</span></div><div class="detail-list"><div class="detail-row" v-for="a in accounts" :key="a.id"><span>{{ a.display_name }} <small>· {{ a.enabled?'已启用':'已停用' }}</small></span><button class="btn" :class="a.id===selectedAccountId?'primary':''" @click="selectAccount(a.id)">{{ a.id===selectedAccountId?'正在管理':'管理账号' }}</button></div></div><div class="empty-state" v-if="!accounts.length"><p>还没有账号。</p><button class="btn primary" @click="addDialog=true">添加账号</button></div></section>
+            </template>
+            <template v-else-if="currentNav.account&&!selectedAccount">
+              <div class="empty-state"><div class="empty-icon" v-html="icon('users')"></div><h2>先选择一个账号</h2><p>在页面顶部选择你要管理的账号。</p><button class="btn" @click="navigate('accounts')">查看账号</button></div>
+            </template>
+            <template v-else-if="page==='friends'">
+              <section class="panel">
+                <div class="panel-head"><div><h2 class="panel-title">{{ selectedAccount.display_name }}的好友</h2><p class="panel-description">已保存的选择决定发送对象，修改后记得保存。</p></div><button class="btn" :disabled="!selectedAccount.has_state||accountBusy(selectedAccount)||savingFriends" @click="fetchContacts()"><span v-html="icon('refresh')"></span>{{ fetchingIds.includes(selectedAccountId)?'采集中…':'采集最新好友' }}</button></div>
+                <div class="notice warning" v-if="!selectedAccount.has_state">当前账号还没有接入凭据。<button class="btn subtle" @click="navigate('credentials')">去接入凭据<span v-html="icon('arrow')"></span></button></div>
+                <p class="notice error" v-if="viewError" role="alert">{{ viewError }}<button class="btn subtle" @click="refreshCurrent">重试</button></p>
+                <div class="friend-toolbar"><label class="sr-only" for="friend-search">搜索好友</label><input id="friend-search" v-model.trim="friendsFilter" placeholder="搜索好友名称" type="search" :disabled="friendsLoading"><button class="btn subtle" :disabled="!friendsLoaded||savingFriends" @click="selectFiltered(true)">选择当前结果</button><button class="btn subtle" :disabled="!friendsLoaded||savingFriends" @click="selectFiltered(false)">清空当前结果</button><span class="chip">已选 {{ friendsSelected.length }} / {{ friendsRows.length }}</span></div>
+                <div role="status" class="empty-state" v-if="friendsLoading"><p>正在加载好友…</p></div>
+                <div class="friend-grid" v-else-if="filteredFriends.length">
+                  <label class="friend-card" v-for="f in filteredFriends" :key="f.user_id||f.short_id||f.display_name" :class="{selected:friendsSelected.includes(f.display_name)}"><input type="checkbox" :checked="friendsSelected.includes(f.display_name)" :disabled="savingFriends" :aria-label="f.display_name" @change="toggleFriend(f.display_name)"><span class="avatar">{{ f.display_name.slice(0,1) }}</span><span class="friend-details"><strong>{{ f.display_name }}</strong><span class="friend-meta">{{ f.streak_days?'火花 '+f.streak_days+' 天 · ':'' }}{{ statusText(f.last_status) }}</span></span></label>
+                </div>
+                <div class="empty-state" v-else><div class="empty-icon" v-html="icon('heart')"></div><h3>{{ friendsFilter?'没有匹配的好友':'好友名单还没有准备好' }}</h3><p>{{ friendsFilter?'试试其他名称。':'接入凭据后，采集最新好友名单。' }}</p></div>
+                <div class="save-bar"><span>{{ friendsDirty?'有未保存的好友选择':'好友选择已与服务同步' }}</span><button class="btn primary" data-testid="friend-save" :disabled="!friendsLoaded||savingFriends||accountBusy(selectedAccount)||!friendsDirty" @click="saveFriends">{{ savingFriends?'正在保存…':'保存好友选择' }}<span v-html="icon('check')"></span></button></div>
+              </section>
+            </template>
+            <template v-else-if="page==='tasks'">
+              <section class="panel"><div class="panel-head"><div><h2 class="panel-title">全局任务</h2><p class="panel-description">所有启用账号依次执行，任务状态会持续同步。</p></div><span class="chip" :class="running?'warn':'ok'">{{ running?'运行中':'空闲' }}</span></div>
+                <div class="detail-list"><div class="detail-row"><span>定时发送</span><strong>{{ autoRunEnabled===false?'已关闭':autoRunEnabled===true?'每日 '+scheduleTime:'开关状态未确认' }}</strong></div><div class="detail-row" v-if="autoRunEnabled&&nextRun"><span>下次执行</span><strong>{{ fmt(nextRun) }}</strong></div><div class="detail-row"><span>最近一轮</span><strong>{{ lastSummary?fmt(lastSummary.at):'暂无记录' }}</strong></div><div class="detail-row" v-if="lastSummary"><span>发送结果</span><strong>成功 {{ summaryTotals.ok||0 }} · 失败 {{ summaryTotals.failed||0 }} · 待确认 {{ summaryTotals.unknown||0 }}</strong></div></div>
+                <div class="page-actions" style="justify-content:flex-start;margin-top:20px;"><button class="btn" :disabled="running||credentialActive||!enabledCount" @click="runAll(true)"><span v-html="icon('play')"></span>全部演练</button><button class="btn danger" :disabled="running||credentialActive||!enabledCount" @click="runAll(false)">全部真实发送</button><button class="btn subtle" v-if="!running&&orch.running" @click="resetOrch">复位残留状态</button></div>
+              </section>
+              <section class="panel" v-if="selectedAccount"><div class="panel-head"><div><h2 class="panel-title">当前账号 · {{ selectedAccount.display_name }}</h2><p class="panel-description">单号任务使用此账号已保存的好友选择与参数。</p></div><span class="chip warn" v-if="selectedAccount.manual_required||isPaused(selectedAccount)">需先核对</span></div><div class="page-actions" style="justify-content:flex-start;"><button class="btn primary" :disabled="running||accountBusy(selectedAccount)||!selectedAccount.has_state||selectedAccount.manual_required" @click="runOne(selectedAccount,true)">当前账号演练</button><button class="btn danger" :disabled="running||accountBusy(selectedAccount)||!selectedAccount.has_state||selectedAccount.manual_required||isPaused(selectedAccount)" @click="runOne(selectedAccount,false)">当前账号真实发送</button><button class="btn subtle" @click="navigate('params')">查看发送参数</button></div></section>
+              <section class="panel"><div class="panel-head"><div><h2 class="panel-title">进行中的任务</h2><p class="panel-description">切页与切换账号不会取消已经开始的任务。</p></div><span class="chip">{{ activeJobs.length }} 个</span></div><div class="detail-list" v-if="activeJobs.length"><div class="detail-row" v-for="j in activeJobs" :key="j.job_id"><span>{{ jobAccount(j) }}</span><strong>{{ jobKind(j) }} · {{ j.phase==='reserved'?'准备中':'进行中' }}</strong></div></div><p class="muted" v-else>当前没有后台任务。</p></section>
+            </template>
+            <template v-else-if="page==='credentials'">
+              <section class="panel"><div class="panel-head"><div><h2 class="panel-title">{{ selectedAccount.display_name }}的登录凭据</h2><p class="panel-description">每个账号独立接入与更新。</p></div><span v-html="icon('shield')"></span></div><div class="credential-status"><span class="chip" :class="selectedAccount.has_state?'ok':'warn'">{{ selectedAccount.has_state?'凭据已接入':'尚未接入凭据' }}</span><p>{{ selectedAccount.has_state?'凭据文件已接入。实际登录状态以演练或任务结果为准。':'打开浏览器手动登录，或上传这个账号导出的登录态文件。' }}</p></div>
+                <div class="credential-actions"><button class="btn primary" data-testid="credential-start" :disabled="uploadBusy||credentialActive||credentialActionBusy||accountBusy(selectedAccount)" @click="startCredentialExtract()"><span v-html="icon('key')"></span>{{ credentialStarting?'正在打开浏览器…':'打开浏览器登录' }}</button><button class="btn" :disabled="uploadBusy||accountBusy(selectedAccount)" @click="uploadState()"><span v-html="icon('upload')"></span>{{ uploadBusy?'正在上传 '+uploadName+'…':selectedAccount.has_state?'上传并更新凭据':'上传登录凭据' }}</button></div>
+                <p class="field-help">浏览器将在运行本服务的电脑上打开。请由本人手动登录；检测到登录信息后，还需在控制台核对目标账号并确认保存。</p><p class="field-help">也可以上传该账号的 Playwright 登录态 JSON 文件，最大 5 MB。</p>
+              </section>
+              <section class="panel"><h2 class="panel-title">准备好一次演练</h2><ol class="workflow-steps"><li>接入当前账号的登录凭据。</li><li>进入好友页采集名单，选择好友并保存。</li><li>查看发送参数，回到任务页运行演练。</li></ol><div class="page-actions" style="justify-content:flex-start;"><button class="btn" @click="navigate('friends')">管理好友<span v-html="icon('arrow')"></span></button><button class="btn subtle" @click="navigate('tasks')">查看任务</button></div></section>
+            </template>
+            <template v-else-if="page==='logs'">
+              <section class="panel"><div class="panel-head"><div><h2 class="panel-title">{{ selectedAccount.display_name }}的运行日志</h2><p class="panel-description">最近 400 行。切换账号会载入对应的记录。</p></div><button class="btn" :disabled="logsLoading" @click="refreshLogs"><span v-html="icon('refresh')"></span>{{ logsLoading?'加载中…':'刷新日志' }}</button></div><p class="notice error" v-if="viewError" role="alert">{{ viewError }}</p><label class="sr-only" for="account-logs">当前账号运行日志</label><textarea id="account-logs" class="logs" readonly :value="logsLoading?'正在加载日志…':logsText" spellcheck="false"></textarea></section>
+            </template>
+            <template v-else-if="page==='params'">
+              <section class="panel"><div class="panel-head"><div><h2 class="panel-title">{{ selectedAccount.display_name }}的发送参数</h2><p class="panel-description">保存后用于此账号的后续任务。</p></div><span class="chip" :class="configDirty?'warn':'ok'">{{ configDirty?'未保存':'已同步' }}</span></div><p class="notice error" v-if="viewError" role="alert">{{ viewError }}<button class="btn subtle" @click="refreshCurrent">重试</button></p><p role="status" v-if="configLoading" class="muted">正在加载参数…</p><div class="field-grid" v-else><label class="field" for="max-friends">每轮最多发送好友数<input id="max-friends" type="number" min="0" max="500" step="1" v-model.number="configForm.max_friends_per_run" :disabled="!configLoaded||savingConfig"><span class="field-help">填 0 表示不限；可设置 0–500。</span></label><label class="field" for="min-gap">好友间隔 · 最小秒数<input id="min-gap" type="number" min="0" max="60" step="0.5" v-model.number="configForm.send_gap_min" :disabled="!configLoaded||savingConfig"><span class="field-help">相邻好友之间的最小等待时间。</span></label><label class="field" for="max-gap">好友间隔 · 最大秒数<input id="max-gap" type="number" min="0" max="60" step="0.5" v-model.number="configForm.send_gap_max" :disabled="!configLoaded||savingConfig"><span class="field-help">应不小于最小间隔。</span></label></div><div class="save-bar"><span>{{ configDirty?'有未保存的参数修改':'当前账号参数已同步' }}</span><button class="btn primary" data-testid="params-save" :disabled="!configLoaded||savingConfig||accountBusy(selectedAccount)||!configDirty" @click="saveConfig">{{ savingConfig?'正在保存…':'保存参数' }}<span v-html="icon('check')"></span></button></div></section>
+            </template>
+            <template v-else-if="page==='backup'">
+              <section class="panel"><div class="panel-head"><div><h2 class="panel-title">所有账号的数据备份</h2><p class="panel-description">备份覆盖账号配置、台账与运行记录。</p></div><button class="btn primary" :disabled="backupBusy||credentialActive||activeJobs.length>0" @click="runBackup"><span v-html="icon('archive')"></span>{{ backupBusy?'正在备份…':'立即备份' }}</button></div><p class="notice error" v-if="viewError" role="alert">{{ viewError }}</p><div class="detail-list"><div class="detail-row"><span>自动备份</span><strong>{{ backupEnabled===false?'已关闭':backupEnabled===true?'每日 '+((backup&&backup.backup_time)||'23:00'):'开关状态未确认' }}</strong></div><div class="detail-row"><span>备份留存</span><strong>{{ backupUsed }} / {{ (backup&&backup.slot_count)||7 }} 份</strong></div><div class="detail-row"><span>最近备份</span><strong>{{ backup&&backup.last_result&&backup.last_result.ok?fmt(backup.last_result.at):'尚未备份' }}</strong></div></div><p class="field-help">账号任务进行中时，备份会等待任务结束后再执行。</p></section>
+              <section class="panel"><h2 class="panel-title">备份记录</h2><div class="detail-list" v-if="backupUsed"><div class="detail-row" v-for="s in (backup?backup.slots:[])" :key="s.slot||s.index" v-show="s.created_at"><span>第 {{ s.slot||s.index||'—' }} 份</span><strong>{{ fmt(s.created_at) }}</strong></div></div><p class="muted" v-else>第一份备份完成后，记录会显示在这里。</p></section>
+            </template>
+            <template v-else-if="page==='appearance'">
+              <section class="panel"><div class="panel-head"><div><h2 class="panel-title"><span v-html="icon('sparkles')"></span>黑金流体背景</h2><p class="panel-description">沿用 1.1 的流体色彩，在后台缓慢流动。</p></div></div><div class="setting-row"><div><strong>动态背景</strong><p class="field-help">关闭后保留静态背景，此选择只影响当前浏览器。实际帧率受屏幕刷新率与设备性能影响。</p></div><el-switch :model-value="motionEnabled" aria-label="动态背景" @change="setMotion"></el-switch></div><p class="notice warning" v-if="motionPreferenceReduced">系统已开启“减少动态效果”，背景保持静态。</p><p class="notice warning" v-else-if="!motionAvailable">当前设备使用静态背景，其他功能照常使用。</p><div class="detail-list"><div class="detail-row"><span>桌面</span><strong>缓慢流动 · 上限 120 帧/秒</strong></div><div class="detail-row"><span>手机</span><strong>低开销模式 · 上限 18 帧/秒</strong></div><div class="detail-row"><span>隐藏页面</span><strong>暂停背景动画</strong></div></div></section>
+            </template>
+            <template v-else-if="page==='more'">
+              <section class="panel"><h2 class="panel-title">更多功能</h2><div class="detail-list"><button class="btn" v-for="item in moreNav" :key="item.id" :data-testid="'more-'+item.id" style="justify-content:space-between;margin-top:12px;" @click="navigate(item.id)"><span><span v-html="icon(item.icon)"></span> {{ item.label }}</span><span v-html="icon('arrow')"></span></button></div></section>
+            </template>
+          </div>
+        </transition>
+        <footer class="page-footer">{{ lastUpdated?'更新于 '+fmt(lastUpdated):'正在同步状态' }} · 多账号独立管理</footer>
+      </main>
+    </div>
+    <nav class="mobile-nav" aria-label="移动功能导航"><button v-for="item in mobileNav" :key="item.id" :class="{active:page===item.id||(item.id==='more'&&mobileMoreActive)}" :aria-current="page===item.id||(item.id==='more'&&mobileMoreActive)?'page':undefined" :data-testid="'mobile-nav-'+item.id" @click="navigate(item.id)"><span v-html="icon(item.icon)"></span><span>{{ item.label }}</span></button></nav>
+  </template>
+  <el-dialog v-model="addDialog" title="添加账号" width="440px" :close-on-click-modal="false"><el-form label-position="top"><el-form-item label="账号显示名称"><el-input v-model.trim="addForm.display_name" placeholder="例如：主账号"></el-input></el-form-item><el-form-item label="账号 ID（留空自动生成）"><el-input v-model.trim="addForm.id" placeholder="3–20 位小写字母、数字、_ 或 -"></el-input></el-form-item></el-form><template #footer><button class="btn" :disabled="adding" @click="addDialog=false">取消</button><button class="btn primary" :disabled="adding" @click="createAccount">{{ adding?'正在添加…':'添加账号' }}</button></template></el-dialog>
+  <el-dialog v-model="editDialog" title="账号设置" width="440px" :close-on-click-modal="false"><el-form label-position="top"><el-form-item label="显示名称"><el-input v-model.trim="editForm.display_name"></el-input></el-form-item><el-form-item label="参与定时任务"><el-switch v-model="editForm.enabled"></el-switch></el-form-item></el-form><template #footer><button class="btn" :disabled="editing" @click="editDialog=false">取消</button><button class="btn primary" :disabled="editing" @click="saveEdit">{{ editing?'正在保存…':'保存设置' }}</button></template></el-dialog>
+  <el-dialog v-model="copyDialog" :title="'复制配置到 '+(copyTarget?copyTarget.display_name:'当前账号')" width="440px" :close-on-click-modal="false"><el-form label-position="top"><el-form-item label="从哪个账号复制"><el-select v-model="copyForm.source_id" style="width:100%;"><el-option v-for="a in copySources" :key="a.id" :value="a.id" :label="a.display_name+' · '+a.id"></el-option></el-select></el-form-item><el-form-item label="同时复制好友名单与勾选"><el-switch v-model="copyForm.copy_ledger"></el-switch></el-form-item><p class="field-help">复制好友名单时，目标账号的原名单会被替换；发送历史不会跨账号复制。</p></el-form><template #footer><button class="btn" :disabled="copying" @click="copyDialog=false">取消</button><button class="btn primary" :disabled="copying" @click="saveCopy">{{ copying?'正在复制…':'复制配置' }}</button></template></el-dialog>
+  <el-dialog v-model="guardVisible" title="有未保存的修改" width="480px" :close-on-click-modal="false" :before-close="closeGuard" :close-on-press-escape="!guardSaving"><p>「{{ guardAccountName }}」的{{ guardEditorName }}还没有保存。你希望怎样处理？</p><p class="field-help">保存失败时会保留修改，并停留在当前页面。</p><template #footer><button class="btn" :disabled="guardSaving" @click="resolveUnsaved('cancel')">取消切换</button><button class="btn" :disabled="guardSaving" @click="resolveUnsaved('discard')">放弃修改</button><button class="btn primary" :disabled="guardSaving" @click="resolveUnsaved('save')">{{ guardSaving?'正在保存…':'保存并切换' }}</button></template></el-dialog>
+  <input ref="fileInput" type="file" accept=".json,application/json" style="display:none" @change="onFilePicked">
+</div>
+<noscript><p style="padding:32px;color:#faf8f3;">请启用 JavaScript 后使用控制台。</p></noscript>
+<script src="/static/vendor/vue.global.prod.js"></script>
+<script src="/static/vendor/element-plus.full.min.js"></script>
+<script src="/static/vendor/axios.min.js"></script>
+<script src="/static/multi-motion.js?v=20261002-ui4"></script>
+<script src="/static/multi-app.js?v=20261002-ui4"></script>
+</body>
+</html>

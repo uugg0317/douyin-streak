@@ -1,0 +1,17 @@
+[Unit]
+Description=Douyin Cloud Streak - 抖音续火花自动服务
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/douyin-streak
+Environment="PATH=/opt/douyin-streak/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+ExecStart=/opt/douyin-streak/venv/bin/python app.py
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,61 @@
+# Repository metadata, local instructions and signing keys
+**/.git
+**/.git/**
+AGENTS.md
+.keys/
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Credentials; retain empty example templates
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
+
+# Account data and login artifacts
+**/data/**
+!**/data/.gitkeep
+**/data.bak-*/
+**/data-migration-backups/
+**/state.json
+**/*_state.json
+**/extract_qr.png
+**/screenshot.png
+**/last_error.png
+
+# Dependencies, caches and build artifacts
+venv/
+.venv/
+env/
+node_modules/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+build/
+dist/
+**/desktop/_build/
+.vscode/
+.idea/
+
+# Logs, archives and temporary files
+*.log
+logs/
+*.pid
+*.zip
+*.tar.gz
+*.tgz
+*.bak
+*.bak_*
+*.orig
+*.rej
+*~
+.DS_Store
+Thumbs.db
+desktop.ini

@@ -1,0 +1,14 @@
+# cookie_flow.py 实际导入的第三方库
+#
+# 只有 playwright 是必需的。清单与基线项目 requirements.txt:7 一致
+# （playwright>=1.42.0），此处取一个有下界的版本。
+playwright>=1.42.0
+
+# playwright-stealth 是【可选】依赖，与基线 core/browser.py:50-55 的语义一致：
+#   - 装了：cookie_flow.py 会注入隐身指纹，并打印 "[stealth] 已注入"
+#   - 没装：打印 "[stealth] 未安装...跳过注入"，流程继续，不报错
+# 基线对它有硬性版本要求（requirements.txt:8-11：必须 >=2.0，因为用的是新版
+# Stealth 类 API；1.x 的 stealth_sync 会让抖音页面报 17 个 JS 错误）。
+# 若要启用，请显式安装（默认不装，避免与基线同样的版本陷阱）：
+#
+#   playwright-stealth>=2.0.0

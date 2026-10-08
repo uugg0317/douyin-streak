@@ -1,0 +1,22 @@
+# 本轮 Windows Python 3.14 隔离验证所用依赖；其它平台需重新验证。
+annotated-doc==0.0.5
+annotated-types==0.8.0
+anyio==4.15.1
+apscheduler==3.11.3
+click==8.5.0
+fastapi==0.141.1
+greenlet==3.5.6
+h11==0.16.0
+idna==3.20
+playwright==1.63.0
+playwright-stealth==2.0.3
+pydantic==2.13.5
+pydantic-core==2.46.5
+pyee==13.0.1
+python-multipart==0.0.32
+starlette==1.7.0
+typing-extensions==4.16.0
+typing-inspection==0.4.4
+tzdata==2026.4
+tzlocal==5.4.4
+uvicorn==0.54.0

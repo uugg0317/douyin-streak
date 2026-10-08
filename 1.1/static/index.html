@@ -1,0 +1,2767 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <title>抖音自动续火花 2.2 · Douyin Cloud Streak</title>
+  <link rel="icon" type="image/png" href="/static/favicon.png" />
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+  <link rel="apple-touch-icon" href="/static/favicon.png" />
+  <link rel="stylesheet" href="/static/vendor/element-plus.css" />
+  <style>
+    /* ==========================================================================
+       Apple 风格设计体系 (Apple HIG / iOS-inspired)
+       ========================================================================== */
+    :root {
+      --bg-page: transparent;
+      --bg-surface: rgba(0, 0, 0, 0.25);
+      --bg-surface-subtle: rgba(255, 255, 255, 0.12);
+      --bg-surface-hover: rgba(0, 0, 0, 0.35);
+
+      --border-color: rgba(255, 255, 255, 0.15);
+      --border-dark: rgba(255, 255, 255, 0.25);
+      --border-focus: #007AFF;
+
+      --text-main: #1D1D1F;
+      --text-regular: #424245;
+      --text-muted: #e5e5ea;
+      --text-light: #e5e5ea;
+
+      --color-primary: #1D1D1F;
+      --color-accent: #007AFF;
+      --color-fire: #ff6b35;
+      --color-success: #34c759;
+      --color-warning: #ff9500;
+      --color-danger: #ff3b30;
+
+      --font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "PingFang SC", "Helvetica Neue", "Segoe UI", Roboto, "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+
+      --radius-sm: 10px;
+      --radius-md: 16px;
+      --radius-lg: 20px;
+      --radius-full: 9999px;
+
+      --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04);
+      --shadow-hover: 0 8px 32px rgba(0, 0, 0, 0.1), 0 2px 6px rgba(0, 0, 0, 0.06);
+      --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      width: 100%;
+      max-width: 100vw;
+      overflow-x: hidden;
+      background-color: rgba(0, 0, 0, 0.25);
+      font-family: var(--font-family);
+      color: var(--text-main);
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      line-height: 1.5;
+    }
+
+
+
+    /* 大背景暗色叠加层，降低亮度，增强文字对比度 */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.45);
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    /* 滚动条 */
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: var(--radius-full); }
+
+    /* ==========================================================================
+       顶部导航栏 (Apple Frosted Glass)
+       ========================================================================== */
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: transparent;
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+      border-bottom: 1px solid transparent;
+      width: 100%;
+      transition: background 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+                  backdrop-filter 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+                  border-color 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .topbar.scrolled {
+      background: rgba(245, 245, 247, 0.8);
+      backdrop-filter: saturate(180%) blur(30px);
+      -webkit-backdrop-filter: saturate(180%) blur(30px);
+      border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+      box-shadow: 0 2px 16px rgba(0, 0, 0, 0.06);
+    }
+    .topbar-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 20px;
+      height: 52px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: nowrap;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+    .brand-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--color-fire);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .brand-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-main);
+      letter-spacing: -0.02em;
+      white-space: nowrap;
+    }
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 500;
+      white-space: nowrap;
+      letter-spacing: -0.01em;
+    }
+    .status-pill.status-ok {
+      background: rgba(52, 199, 89, 0.12);
+      color: #248a3d;
+    }
+    .status-pill.status-bad {
+      background: rgba(255, 59, 48, 0.12);
+      color: #d70015;
+    }
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+    .btn-icon-top {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      border: none;
+      background: rgba(0, 0, 0, 0.05);
+      color: var(--text-regular);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      padding: 0;
+      transition: var(--transition);
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn-icon-top:hover {
+      background: rgba(0, 0, 0, 0.08);
+      transform: scale(1.05);
+    }
+    .btn-icon-top:active {
+      transform: scale(0.97);
+    }
+
+    /* 全局禁用文字选择：点击/拖动框架不再出现蓝色选中框与复制粘贴菜单；输入框、日志终端保留可选择 */
+    body {
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;
+    }
+    input, textarea, [contenteditable="true"], .terminal-body, .el-input__inner, .el-textarea__inner {
+      -webkit-user-select: text;
+      -moz-user-select: text;
+      user-select: text;
+      -webkit-touch-callout: default;
+    }
+
+    /* ==========================================================================
+       页面主体布局
+       ========================================================================== */
+    .app-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 28px 20px 60px;
+      width: 100%;
+    }
+    .shell {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 20px;
+      align-items: start;
+      width: 100%;
+    }
+
+    /* 侧边导航 - iOS 分组列表风格 */
+    .side-nav {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      background: transparent !important;
+      backdrop-filter: none !important;
+      -webkit-backdrop-filter: none !important;
+      border: none !important;
+      border-radius: 0 !important;
+      padding: 0 !important;
+      box-shadow: none !important;
+      overflow: visible !important;
+      width: fit-content !important;
+    }
+    .nav-btn {
+      display: flex !important;
+      align-items: center !important;
+      gap: 10px !important;
+      padding: 10px 14px !important;
+      border-radius: 12px !important;
+      width: fit-content !important;
+      min-width: 0 !important;
+      max-width: 100% !important;
+      border: 1px solid rgba(255, 255, 255, 0.12) !important;
+      background: rgba(255, 255, 255, 0.08) !important;
+      backdrop-filter: blur(12px) saturate(180%) !important;
+      -webkit-backdrop-filter: blur(12px) saturate(180%) !important;
+      color: #1D1D1F !important;
+      font-size: 14px !important;
+      font-weight: 500 !important;
+      cursor: pointer !important;
+      text-align: left !important;
+      transition: all 0.45s cubic-bezier(0.22, 1, 0.36, 1) !important;
+      white-space: nowrap !important;
+      user-select: none !important;
+      -webkit-tap-highlight-color: transparent !important;
+      letter-spacing: -0.01em !important;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06) !important;
+      transform: translateY(0) scale(1) !important;
+      outline: none !important;
+    }
+    .nav-btn:hover {
+      background: rgba(255, 255, 255, 0.18) !important;
+      border-color: rgba(255, 255, 255, 0.28) !important;
+      color: #1D1D1F !important;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.14), inset 0 1px 0 rgba(255,255,255,0.2) !important;
+      transform: translateY(-4px) scale(1.02) !important;
+    }
+    .nav-btn.active {
+      background: rgba(255, 255, 255, 0.3) !important;
+      border-color: rgba(255, 255, 255, 0.45) !important;
+      color: #1D1D1F !important;
+      font-weight: 600 !important;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255,255,255,0.35) !important;
+      transform: translateY(-5px) scale(1.03) !important;
+    }
+    .nav-btn .icon,
+    .nav-btn .icon svg,
+    .nav-btn .icon-svg {
+      color: #1D1D1F !important;
+      fill: #1D1D1F !important;
+      stroke: #1D1D1F !important;
+    }
+    .nav-btn .icon {
+      width: 18px;
+      height: 18px;
+      flex-shrink: 0;
+    }
+
+    /* ==========================================================================
+       卡片容器 (Apple Cards)
+       ========================================================================== */
+    .main-view {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      width: 100%;
+      min-width: 0;
+      position: relative;
+      z-index: 2;
+    }
+    .card {
+      background: rgba(255, 255, 255, 0.12) !important;
+      border: 1px solid rgba(255, 255, 255, 0.25) !important;
+      border-radius: var(--radius-md);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255,255,255,0.1);
+      padding: 24px 26px;
+      width: 100%;
+      transition: var(--transition);
+    }
+
+    .card:hover {
+      box-shadow: var(--shadow-hover);
+    }
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 18px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    }
+    .card-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-main);
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      letter-spacing: -0.02em;
+    }
+    .card-desc {
+      font-size: 12.5px;
+      color: var(--text-muted);
+      margin: 4px 0 0;
+      line-height: 1.5;
+    }
+
+    /* 数据指标看板 - Apple 风格 */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      width: 100%;
+    }
+    .stat-box {
+      background: rgba(255, 255, 255, 0.12) !important;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255,255,255,0.1);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: var(--radius-md);
+      padding: 18px 20px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      transition: var(--transition);
+    }
+    .stat-box:hover {
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+      transform: translateY(-2px);
+      background: rgba(255, 255, 255, 0.1) !important;
+    }
+    .stat-label {
+      font-size: 12.5px;
+      font-weight: 500;
+      color: var(--text-muted);
+      letter-spacing: -0.01em;
+    }
+    .stat-value {
+      font-size: 24px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      color: var(--text-main);
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+      letter-spacing: -0.03em;
+    }
+
+    /* 按钮体系 - iOS 风格 */
+    .btn-action-primary {
+      background: rgba(255, 255, 255, 0.15) !important;
+      backdrop-filter: blur(12px) !important;
+      -webkit-backdrop-filter: blur(12px) !important;
+      color: var(--text-main) !important;
+      border: 1px solid rgba(255, 255, 255, 0.25) !important;
+      border-radius: 12px !important;
+      font-weight: 600 !important;
+      font-size: 14px !important;
+      padding: 10px 20px !important;
+      transition: var(--transition) !important;
+      letter-spacing: -0.01em !important;
+    }
+    .btn-action-primary:hover {
+      background: rgba(255, 255, 255, 0.25) !important;
+      transform: scale(1.02);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    .btn-action-primary:active {
+      transform: scale(0.98);
+    }
+    .btn-action-fire {
+      background: rgba(255, 255, 255, 0.15) !important;
+      backdrop-filter: blur(12px) !important;
+      -webkit-backdrop-filter: blur(12px) !important;
+      color: var(--text-main) !important;
+      border: 1px solid rgba(255, 255, 255, 0.25) !important;
+      border-radius: 12px !important;
+      font-weight: 600 !important;
+      font-size: 14px !important;
+      padding: 10px 20px !important;
+      transition: var(--transition) !important;
+      letter-spacing: -0.01em !important;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+    .btn-action-fire:hover {
+      background: rgba(255, 255, 255, 0.25) !important;
+      transform: scale(1.02);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+    }
+    .btn-action-fire:active {
+      transform: scale(0.98);
+    }
+
+    /* ==========================================================================
+       桌面端与手机端好友列表
+       ========================================================================== */
+    .desktop-only-table { display: block; }
+    .mobile-only-cards { display: none; }
+
+    /* 好友卡片选中态 */
+    .friend-card.is-selected {
+      border-color: transparent !important;
+      box-shadow: none;
+      background: linear-gradient(135deg, rgba(0,122,255,0.03), var(--bg-surface)) !important;
+    }
+    .friend-card:hover {
+      border-color: rgba(0, 122, 255, 0.3);
+    }
+
+    /* Apple 风格好友卡片从上方弹出入场 */
+    @keyframes friendCardEnter {
+      0% {
+        opacity: 0;
+        transform: translateY(-180px);
+      }
+      100% {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    .friend-card {
+      animation: friendCardEnter 1s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+    }
+
+    /* 隐藏滚动条 */
+    .no-scrollbar {
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+      width: 0;
+      height: 0;
+    }
+    /* 删除按钮 */
+    .friend-del-btn {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #ff3b30;
+      font-size: 16px;
+      font-weight: 700;
+      line-height: 1;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: all 0.15s ease;
+      background: rgba(255, 59, 48, 0.08);
+      user-select: none;
+    }
+    .friend-del-btn:hover {
+      background: #ff3b30;
+      color: #fff;
+      transform: scale(1.12);
+    }
+
+    /* 流体背景 canvas */
+    #fluid-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      display: block;
+    }
+    #app {
+      position: relative;
+      z-index: 1;
+    }
+
+    /* iOS 风格顶部横幅弹窗 */
+    .ios-banner {
+      position: fixed;
+      top: 14px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-150%);
+      width: fit-content;
+      max-width: min(92%, 320px);
+      background: rgba(255, 255, 255, 0.55);
+      backdrop-filter: blur(32px) saturate(200%);
+      -webkit-backdrop-filter: blur(32px) saturate(200%);
+      border-radius: 20px;
+      padding: 12px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 14px 44px rgba(0, 0, 0, 0.18), 0 4px 14px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255,255,255,0.6);
+      z-index: 99999;
+      transition: transform 0.55s cubic-bezier(0.34, 1.56, 0.64, 1);
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      pointer-events: none;
+    }
+    .ios-banner-show {
+      transform: translateX(-50%) translateY(0);
+    }
+    .ios-banner-text {
+      min-width: 0;
+      text-align: center;
+    }
+    .ios-banner-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: #1d1d1f;
+      margin: 0;
+      line-height: 1.3;
+      letter-spacing: -0.01em;
+      white-space: nowrap;
+    }
+    .ios-banner-subtitle {
+      font-size: 12.5px;
+      color: #e5e5ea;
+      margin: 2px 0 0 0;
+      line-height: 1.3;
+    }
+    /* 好友卡片网格滚动条 */
+    .desktop-only-table::-webkit-scrollbar { width: 6px; }
+    .desktop-only-table::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 3px; }
+    .desktop-only-table::-webkit-scrollbar-track { background: transparent; }
+
+    .table-box {
+      border: none;
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      background: rgba(255, 255, 255, 0.1) !important;
+      width: 100%;
+      box-shadow: var(--shadow-card);
+    }
+    .el-table {
+      --el-table-bg-color: transparent !important;
+      --el-table-tr-bg-color: transparent !important;
+      --el-table-header-bg-color: rgba(255, 255, 255, 0.15) !important;
+      --el-table-row-hover-bg-color: rgba(255, 255, 255, 0.2) !important;
+      --el-table-border-color: rgba(255, 255, 255, 0.1) !important;
+      font-size: 13.5px;
+      --el-table-text-color: var(--text-regular) !important;
+      --el-table-header-text-color: var(--text-muted) !important;
+    }
+
+    /* 手机端精美卡片式好友列表项 - Apple 风格 */
+    .contact-card-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(255, 255, 255, 0.18) !important;
+      backdrop-filter: blur(20px) saturate(180%) !important;
+      -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+      border: 1px solid rgba(255, 255, 255, 0.3) !important;
+      border-radius: 12px;
+      padding: 10px 12px;
+      transition: var(--transition);
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      cursor: pointer;
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
+      overflow: hidden;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255,255,255,0.25);
+      animation: friendCardEnter 1s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+    }
+    .contact-card-row:nth-child(1) { animation-delay: 0.05s; }
+    .contact-card-row:nth-child(2) { animation-delay: 0.1s; }
+    .contact-card-row:nth-child(3) { animation-delay: 0.15s; }
+    .contact-card-row:nth-child(4) { animation-delay: 0.2s; }
+    .contact-card-row:nth-child(5) { animation-delay: 0.25s; }
+    .contact-card-row:nth-child(6) { animation-delay: 0.3s; }
+    .contact-card-row:nth-child(7) { animation-delay: 0.35s; }
+    .contact-card-row:nth-child(8) { animation-delay: 0.4s; }
+    .contact-card-row:nth-child(9) { animation-delay: 0.45s; }
+    .contact-card-row:nth-child(10) { animation-delay: 0.5s; }
+    .contact-card-row:nth-child(n+11) { animation-delay: 0.55s; }
+    .contact-card-row:hover {
+      box-shadow: var(--shadow-card);
+      transform: translateY(-1px);
+    }
+    .contact-card-row:active {
+      transform: scale(0.99);
+      background: rgba(255, 255, 255, 0.25) !important;
+    }
+    .contact-card-row.is-selected {
+      background: rgba(255, 255, 255, 0.25) !important;
+      backdrop-filter: blur(20px) saturate(180%) !important;
+      -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+      border: 1px solid transparent !important;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255,255,255,0.25);
+    }
+    .chk-wrap {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .avatar-badge {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: #f1f5f9;
+      color: #0f172a;
+      font-weight: 700;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      border: 1px solid #e2e8f0;
+    }
+    .user-meta {
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      flex: 1;
+      min-width: 0;
+    }
+    .user-name {
+      font-size: 14px;
+      font-weight: 600;
+      color: #0f172a;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .user-sub {
+      font-size: 11.5px;
+      color: #64748b;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .pill-group {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      flex-shrink: 0;
+    }
+    .spark-pill {
+      color: #ea580c;
+      background: #fff7ed;
+      border: 1px solid #fed7aa;
+      padding: 2px 6px;
+      border-radius: 12px;
+      font-size: 11.5px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .no-spark-pill {
+      color: #94a3b8;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      padding: 2px 6px;
+      border-radius: 12px;
+      font-size: 11px;
+      white-space: nowrap;
+    }
+    .status-pill-sub {
+      font-size: 11px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+    .status-pill-sub.success {
+      background: #dcfce7;
+      color: #15803d;
+    }
+    .status-pill-sub.failed {
+      background: #fee2e2;
+      color: #b91c1c;
+    }
+    .status-pill-sub.pending {
+      background: #f1f5f9;
+      color: #64748b;
+    }
+
+    /* 日志控制台 - 透明玻璃质感终端 */
+    .terminal-box {
+      background: rgba(0, 0, 0, 0.28) !important;
+      backdrop-filter: blur(20px) saturate(180%) !important;
+      -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+      border: 1px solid rgba(255, 255, 255, 0.25) !important;
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      width: 100%;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255,255,255,0.1);
+    }
+    .terminal-header {
+      background: rgba(255, 255, 255, 0.08) !important;
+      backdrop-filter: blur(10px) !important;
+      -webkit-backdrop-filter: blur(10px) !important;
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: rgba(245, 245, 247, 0.7) !important;
+      font-size: 12px;
+      font-family: var(--font-mono);
+      letter-spacing: -0.01em;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .terminal-body {
+      margin: 0;
+      padding: 16px;
+      font-family: var(--font-mono);
+      font-size: 12.5px;
+      line-height: 1.7;
+      color: #f5f5f7 !important;
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+      height: 380px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    /* 刷新圆点 - 点击回弹 */
+    .refresh-dot:active {
+      transform: scale(0.55);
+    }
+
+    /* ===== 全面透明玻璃质感覆盖 ===== */
+    /* 所有 Element Plus 按钮变体 */
+    .el-button--default,
+    .el-button--primary,
+    .el-button--success,
+    .el-button--warning,
+    .el-button--danger,
+    .el-button--info,
+    .el-button--text {
+      background: rgba(255, 255, 255, 0.12) !important;
+      border: 1px solid rgba(255, 255, 255, 0.2) !important;
+      color: var(--text-main) !important;
+      backdrop-filter: blur(10px) !important;
+      -webkit-backdrop-filter: blur(10px) !important;
+    }
+    .el-button--default:hover,
+    .el-button--primary:hover,
+    .el-button--success:hover,
+    .el-button--warning:hover,
+    .el-button--danger:hover,
+    .el-button--info:hover {
+      background: rgba(255, 255, 255, 0.25) !important;
+      color: var(--text-main) !important;
+      border-color: rgba(255, 255, 255, 0.35) !important;
+    }
+    .el-button--default:disabled,
+    .el-button--primary:disabled,
+    .el-button--success:disabled,
+    .el-button--warning:disabled,
+    .el-button--danger:disabled,
+    .el-button--info:disabled {
+      background: rgba(255, 255, 255, 0.06) !important;
+      color: rgba(0, 0, 0, 0.3) !important;
+      border-color: rgba(255, 255, 255, 0.1) !important;
+    }
+
+    /* 输入框 */
+    .el-input__wrapper,
+    .el-textarea__inner,
+    .el-select__wrapper {
+      background: rgba(255, 255, 255, 0.1) !important;
+      box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.15) inset !important;
+      backdrop-filter: blur(8px) !important;
+      -webkit-backdrop-filter: blur(8px) !important;
+    }
+    .el-input__wrapper:hover,
+    .el-textarea__inner:hover,
+    .el-select__wrapper:hover {
+      box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.25) inset !important;
+    }
+    .el-input__wrapper.is-focus,
+    .el-select__wrapper.is-focused {
+      box-shadow: 0 0 0 1px #007AFF inset !important;
+    }
+    .el-input__inner,
+    .el-textarea__inner {
+      color: var(--text-main) !important;
+    }
+    .el-input__inner::placeholder,
+    .el-textarea__inner::placeholder {
+      color: var(--text-muted) !important;
+    }
+
+    /* 下拉框 */
+    .el-select-dropdown,
+    .el-popper {
+      background: rgba(30, 30, 32, 0.9) !important;
+      backdrop-filter: blur(20px) !important;
+      -webkit-backdrop-filter: blur(20px) !important;
+      border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    }
+    .el-select-dropdown__item {
+      color: var(--text-regular) !important;
+    }
+    .el-select-dropdown__item:hover {
+      background: rgba(255, 255, 255, 0.1) !important;
+    }
+    .el-select-dropdown__item.selected {
+      color: #007AFF !important;
+      font-weight: 600 !important;
+    }
+
+    /* 开关 */
+    .el-switch__core {
+      background-color: rgba(255, 255, 255, 0.2) !important;
+      border: 1px solid rgba(255, 255, 255, 0.25) !important;
+    }
+    .el-switch.is-checked .el-switch__core {
+      background-color: #007AFF !important;
+      border-color: #007AFF !important;
+    }
+
+    /* 滑块 */
+    .el-slider__runway {
+      background-color: rgba(255, 255, 255, 0.15) !important;
+    }
+    .el-slider__bar {
+      background-color: #007AFF !important;
+    }
+
+    /* 单选/多选框 */
+    .el-radio__inner,
+    .el-checkbox__inner {
+      background-color: rgba(255, 255, 255, 0.1) !important;
+      border-color: rgba(255, 255, 255, 0.25) !important;
+    }
+    .el-radio__input.is-checked .el-radio__inner,
+    .el-checkbox__input.is-checked .el-checkbox__inner {
+      background-color: #007AFF !important;
+      border-color: #007AFF !important;
+    }
+
+    /* 对话框/弹窗 */
+    .el-dialog,
+    .el-message-box {
+      background: rgba(30, 30, 32, 0.85) !important;
+      backdrop-filter: blur(30px) !important;
+      -webkit-backdrop-filter: blur(30px) !important;
+      border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    }
+    .el-dialog__title,
+    .el-message-box__title {
+      color: var(--text-main) !important;
+    }
+    .el-dialog__body,
+    .el-message-box__message {
+      color: var(--text-regular) !important;
+    }
+
+    /* 消息提示 */
+    .el-message {
+      background: rgba(30, 30, 32, 0.85) !important;
+      backdrop-filter: blur(20px) !important;
+      -webkit-backdrop-filter: blur(20px) !important;
+      border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    }
+    .el-message__content {
+      color: var(--text-main) !important;
+    }
+
+    /* 分页 */
+    .el-pagination button,
+    .el-pager li {
+      background: rgba(255, 255, 255, 0.1) !important;
+      color: var(--text-regular) !important;
+    }
+    .el-pager li.is-active {
+      background: #007AFF !important;
+      color: #fff !important;
+    }
+
+    /* 标签页 */
+    .el-tabs__item {
+      color: var(--text-muted) !important;
+    }
+    .el-tabs__item.is-active {
+      color: var(--text-main) !important;
+    }
+    .el-tabs__active-bar {
+      background-color: #007AFF !important;
+    }
+
+    /* 导航栏父容器确保透明 */
+    .shell,
+    .app-container,
+    .main-view,
+    #app {
+      background: transparent !important;
+    }
+
+    /* 所有内联背景色的元素强制透明（谨慎使用） */
+    [style*="background: #fff"],
+    [style*="background: #ffffff"],
+    [style*="background-color: #fff"],
+    [style*="background-color: #ffffff"] {
+      background: rgba(255, 255, 255, 0.12) !important;
+    }
+
+    /* Element Plus 适配 - Apple 风格 */
+    .el-input__wrapper, .el-textarea__inner {
+      background-color: rgba(255, 255, 255, 0.15) !important;
+      border: 1px solid rgba(255, 255, 255, 0.25) !important;
+      box-shadow: none !important;
+      border-radius: 12px !important;
+      color: var(--text-main) !important;
+      font-size: 14px;
+      padding: 4px 12px !important;
+      transition: var(--transition) !important;
+      backdrop-filter: blur(8px) !important;
+      -webkit-backdrop-filter: blur(8px) !important;
+    }
+    .el-input__wrapper:hover, .el-textarea__inner:hover {
+      background-color: rgba(255, 255, 255, 0.25) !important;
+    }
+    .el-input__wrapper.is-focus, .el-textarea__inner:focus {
+      background-color: rgba(255, 255, 255, 0.3) !important;
+      box-shadow: none;
+    }
+    .el-form-item__label {
+      color: var(--text-main) !important;
+      font-weight: 500;
+      font-size: 13.5px;
+      letter-spacing: -0.01em;
+    }
+    .el-button {
+      border-radius: 12px !important;
+      font-weight: 600;
+      font-size: 14px;
+      transition: var(--transition) !important;
+      letter-spacing: -0.01em;
+      background: rgba(255, 255, 255, 0.12) !important;
+      border: 1px solid rgba(255, 255, 255, 0.2) !important;
+      color: var(--text-main) !important;
+      backdrop-filter: blur(10px) !important;
+      -webkit-backdrop-filter: blur(10px) !important;
+    }
+    .el-button:hover {
+      transform: scale(1.02);
+      background: rgba(255, 255, 255, 0.22) !important;
+    }
+    .el-button:active {
+      transform: scale(0.98);
+    }
+    .el-button:disabled {
+      opacity: 0.5 !important;
+    }
+    .icon-svg {
+      width: 16px;
+      height: 16px;
+      display: inline-block;
+      vertical-align: middle;
+      fill: currentColor;
+    }
+
+    /* ==========================================================================
+       📱 移动端针对性重构 (Mobile Optimization)
+       ========================================================================== */
+    @media (max-width: 768px) {
+      .app-container {
+        padding: 12px 10px calc(98px + env(safe-area-inset-bottom)) 10px;
+        min-height: 100vh;
+        min-height: 100dvh;
+      }
+      .shell {
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+      /* 日志框自适应延伸到导航上方一点（覆盖移动端 280px 固定高度） */
+      .logs-pane .terminal-body { height: calc(100dvh - 200px); }
+
+      /* 底部固定导航栏 - 每个按钮独立，无大框架笼罩 */
+      .side-nav {
+        position: fixed !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        width: 100vw !important;
+        max-width: 100vw !important;
+        box-sizing: border-box !important;
+        z-index: 9999 !important;
+        border-radius: 0 !important;
+        border-top: 1px solid rgba(255, 255, 255, 0.14) !important;
+        border-left: none !important;
+        border-right: none !important;
+        border-bottom: none !important;
+        background: rgba(16, 16, 20, 0.62) !important;
+        backdrop-filter: blur(22px) saturate(180%) !important;
+        -webkit-backdrop-filter: blur(22px) saturate(180%) !important;
+        padding: 8px 12px calc(8px + env(safe-area-inset-bottom)) 12px !important;
+        box-shadow: none !important;
+        flex-direction: row !important;
+        justify-content: center !important;
+        gap: 10px !important;
+        transform: translateZ(0) !important;
+      }
+      .nav-btn {
+        flex-direction: column !important;
+        gap: 4px !important;
+        padding: 8px 12px !important;
+        font-size: 11px !important;
+        text-align: center !important;
+        align-items: center !important;
+        flex: 0 0 auto !important;
+        width: fit-content !important;
+        min-width: 56px !important;
+        border-radius: 12px !important;
+        background: rgba(255, 255, 255, 0.12) !important;
+        backdrop-filter: blur(10px) !important;
+        -webkit-backdrop-filter: blur(10px) !important;
+        border: 1px solid rgba(255, 255, 255, 0.25) !important;
+        color: #1D1D1F !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06) !important;
+        transition: all 0.35s cubic-bezier(0.22, 1, 0.36, 1) !important;
+        transform: translateY(0) scale(1) !important;
+      }
+      .nav-btn .icon {
+        width: 18px !important;
+        height: 18px !important;
+        color: #1D1D1F !important;
+        fill: #1D1D1F !important;
+        stroke: #1D1D1F !important;
+      }
+      .nav-btn:hover {
+        background: rgba(255, 255, 255, 0.2) !important;
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12) !important;
+        transform: translateY(-3px) scale(1.02) !important;
+      }
+      .nav-btn.active {
+        background: rgba(255, 255, 255, 0.28) !important;
+        border-color: rgba(255, 255, 255, 0.4) !important;
+        color: #1D1D1F !important;
+        font-weight: 600 !important;
+        box-shadow: 0 10px 24px rgba(0, 0, 0, 0.16), inset 0 1px 0 rgba(255,255,255,0.3) !important;
+        transform: translateY(-4px) scale(1.03) !important;
+      }
+
+      /* 隐藏桌面大表格，显示手机端轻量卡片 */
+      .desktop-only-table {
+        display: none !important;
+      }
+      .mobile-only-cards {
+        display: flex !important;
+        flex-direction: column;
+        gap: 8px;
+        max-height: 480px;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: 6px;
+      }
+
+      /* 2x2 数据看板 */
+      .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+      }
+      .stat-box {
+        padding: 12px 12px;
+      }
+      .stat-label {
+        font-size: 11px;
+      }
+      .stat-value {
+        font-size: 17px;
+      }
+
+      /* 卡片与按钮组优化 */
+      .card {
+        padding: 14px 14px;
+        border-radius: var(--radius-sm);
+      }
+      .card-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+        margin-bottom: 12px;
+      }
+      .card-title {
+        font-size: 14px;
+      }
+      
+      .mobile-action-grid {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 8px !important;
+        width: 100% !important;
+      }
+      .mobile-action-grid .el-button {
+        margin: 0 !important;
+        width: 100% !important;
+        height: 38px !important;
+        font-size: 13px !important;
+      }
+      .mobile-full-btn {
+        width: 100% !important;
+        margin: 0 !important;
+      }
+      .mobile-stack-grid {
+        grid-template-columns: 1fr !important;
+        gap: 8px !important;
+      }
+
+      .terminal-body {
+        height: 280px;
+        font-size: 11.5px;
+        padding: 10px;
+      }
+
+    }
+
+    /* ==========================================================================
+       苹果风格增强：3D卡片 / 错开淡入 / 渐变按钮 / 滚动阻尼
+       ========================================================================== */
+
+    /* 滚动阻尼感 */
+    html {
+      scroll-behavior: smooth;
+      -webkit-overflow-scrolling: touch;
+    }
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(0, 0, 0, 0.28);
+      border-radius: 999px;
+      border: 2px solid transparent;
+      background-clip: padding-box;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(0, 0, 0, 0.3);
+      background-clip: padding-box;
+      border: 2px solid transparent;
+    }
+
+    /* 页面加载错开淡入 */
+    .stagger-item {
+      opacity: 0;
+      animation: staggerFadeIn 1s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
+    .stagger-item:nth-child(1) { animation-delay: 0.08s; }
+    .stagger-item:nth-child(2) { animation-delay: 0.18s; }
+    .stagger-item:nth-child(3) { animation-delay: 0.28s; }
+    .stagger-item:nth-child(4) { animation-delay: 0.38s; }
+    .stagger-item:nth-child(5) { animation-delay: 0.48s; }
+    .stagger-item:nth-child(6) { animation-delay: 0.58s; }
+    .stagger-item:nth-child(7) { animation-delay: 0.68s; }
+    .stagger-item:nth-child(8) { animation-delay: 0.78s; }
+    @keyframes staggerFadeIn {
+      to { opacity: 1; }
+    }
+
+    /* 3D 倾斜卡片 */
+    .card-3d {
+      transform-style: preserve-3d;
+      perspective: 800px;
+      transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1),
+                  box-shadow 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+      will-change: transform;
+    }
+    .card-3d:hover {
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.1), 0 4px 12px rgba(0, 0, 0, 0.06);
+      background: rgba(255, 255, 255, 0.1) !important;
+    }
+    .card-3d .card-inner {
+      transform: translateZ(20px);
+    }
+
+    /* 渐变填充按钮 */
+    .btn-gradient {
+      position: relative;
+      overflow: hidden;
+      background: var(--color-accent);
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      padding: 10px 22px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1),
+                  box-shadow 0.25s ease,
+                  background 0.3s ease;
+      box-shadow: 0 4px 14px rgba(0, 122, 255, 0.3);
+    }
+    .btn-gradient::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, #007AFF 0%, #5856D6 100%);
+      opacity: 0;
+      transition: opacity 0.35s ease;
+      z-index: 0;
+    }
+    .btn-gradient:hover::before {
+      opacity: 1;
+    }
+    .btn-gradient:hover {
+      transform: translateY(-3px) scale(1.03);
+      box-shadow: 0 12px 32px rgba(0, 122, 255, 0.5);
+    }
+    .btn-gradient:active {
+      transform: translateY(0) scale(0.96);
+    }
+    .btn-gradient span {
+      position: relative;
+      z-index: 1;
+    }
+
+    /* 次级按钮：渐变描边 */
+    .btn-ghost {
+      position: relative;
+      overflow: hidden;
+      background: transparent;
+      color: var(--color-accent);
+      border: 1.5px solid var(--color-accent);
+      border-radius: 12px;
+      padding: 9px 20px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .btn-ghost:hover {
+      background: var(--color-accent);
+      color: #fff;
+      transform: translateY(-1px);
+      box-shadow: 0 6px 18px rgba(0, 122, 255, 0.25);
+    }
+
+    /* 侧边导航 iOS 分组风格 */
+    .side-nav {
+      background: rgba(255, 255, 255, 0.12) !important;
+      backdrop-filter: blur(24px) saturate(180%) !important;
+      -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
+      border: 1px solid rgba(255, 255, 255, 0.2) !important;
+      border-radius: 16px !important;
+      padding: 6px !important;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08) !important;
+      overflow: hidden !important;
+    }
+    .side-nav .nav-item,
+    .side-nav .nav-btn {
+      border-radius: 10px !important;
+      margin: 3px 0 !important;
+      transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+      font-weight: 500 !important;
+    }
+    .side-nav .nav-item:hover,
+    .side-nav .nav-btn:hover {
+      background: #f5f5f7 !important;
+      transform: translateX(4px);
+    }
+    .side-nav .nav-item.active,
+    .side-nav .nav-btn.active {
+      background: rgba(255, 255, 255, 0.15) !important;
+      color: #1D1D1F !important;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255,255,255,0.25) !important;
+      transform: translateX(4px) scale(1.02);
+    }
+
+    /* 概览卡片苹果质感 */
+    .overview-card {
+      background: rgba(255, 255, 255, 0.12) !important;
+      backdrop-filter: blur(24px) saturate(180%) !important;
+      -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
+      border-radius: 18px !important;
+      padding: 24px !important;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08) !important;
+      border: 1px solid rgba(255, 255, 255, 0.2) !important;
+      transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1),
+                  box-shadow 0.3s ease !important;
+    }
+    .overview-card:hover {
+      transform: translateY(-6px) scale(1.02);
+      box-shadow: 0 20px 50px rgba(0,0,0,0.12) !important;
+      background: rgba(255, 255, 255, 0.18) !important;
+    }
+
+    /* 统计卡片增强 */
+    .stat-box {
+      transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1),
+                  box-shadow 0.3s ease,
+                  background 0.3s ease !important;
+    }
+    .stat-box:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 30px rgba(0,0,0,0.1) !important;
+      background: rgba(255, 255, 255, 0.18) !important;
+    }
+
+    /* 主卡片增强 */
+    .card {
+      transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1),
+                  box-shadow 0.3s ease !important;
+    }
+
+    /* Vue 加载前隐藏所有模板内容，防止 {{ }} 闪烁 */
+    [v-cloak] {
+      display: none !important;
+    }
+
+    /* ── 毛玻璃透明圆弧：全局弹出提示 ─────────────────────── */
+    .el-message {
+      background: rgba(255,255,255,0.22) !important;
+      border: 1px solid rgba(255,255,255,0.28) !important;
+      border-radius: 999px !important;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.18) !important;
+      -webkit-backdrop-filter: blur(22px) saturate(1.7);
+      backdrop-filter: blur(22px) saturate(1.7);
+      color: #fff !important;
+      padding: 11px 20px !important;
+      min-width: 0 !important;
+    }
+    .el-message .el-message__content { color: #fff !important; font-weight: 500; }
+    .el-message--success { background: rgba(52,199,89,0.28) !important; }
+    .el-message--success .el-message__icon { color: #30d158 !important; }
+    .el-message--error { background: rgba(255,69,58,0.30) !important; }
+    .el-message--error .el-message__icon { color: #ff453a !important; }
+    .el-message--warning { background: rgba(255,159,10,0.30) !important; }
+    .el-message--warning .el-message__icon { color: #ffd60a !important; }
+    .el-message--info { background: rgba(108,108,120,0.34) !important; }
+    .el-message--info .el-message__icon,
+    .el-message .el-message__icon { color: #fff !important; }
+    .el-message__closeBtn { color: rgba(255,255,255,0.8) !important; }
+
+    /* 居中确认弹窗：毛玻璃圆角面板 */
+    .el-overlay { background: rgba(0,0,0,0.28); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+    .el-message-box {
+      background: rgba(255,255,255,0.20) !important;
+      border: 1px solid rgba(255,255,255,0.28) !important;
+      border-radius: 22px !important;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.28) !important;
+      -webkit-backdrop-filter: blur(26px) saturate(1.7);
+      backdrop-filter: blur(26px) saturate(1.7);
+      color: #fff !important;
+    }
+    .el-message-box .el-message-box__title,
+    .el-message-box .el-message-box__message p,
+    .el-message-box .el-message-box__content { color: #fff !important; }
+    .el-message-box .el-message-box__headerbtn .el-message-box__close { color: rgba(255,255,255,0.85); }</style>
+</head>
+<body>
+  <canvas id="fluid-canvas"></canvas>
+  <div id="app" style="display:none;">
+    <!-- iOS 风格顶部横幅弹窗（移动端 Teleport 到 body，避免被 #app 层叠上下文裁剪） -->
+    <Teleport to="body" :disabled="!isMobile">
+    <div class="ios-banner" :class="{ 'ios-banner-show': iosBanner.visible }">
+      <div class="ios-banner-text" style="padding-left: 0;">
+        <div class="ios-banner-title">{{ iosBanner.title }}</div>
+        <div class="ios-banner-subtitle" v-if="iosBanner.subtitle">{{ iosBanner.subtitle }}</div>
+      </div>
+    </div>
+    </Teleport>
+
+    <!-- 顶部导航栏 -->
+    <header class="topbar">
+      <div class="topbar-inner">
+        <div class="brand">
+          <div class="brand-icon" aria-hidden="true"><img src="/static/fire-icon.png" style="width:88%;height:88%;object-fit:contain;display:block;margin:auto;" /></div>
+          <span class="brand-title">抖音自动续火花 {{ status.version || appVersion }}</span>
+        </div>
+        <div class="topbar-right">
+          <span class="status-pill" :class="status.state_file_exists ? 'status-ok' : 'status-bad'">
+            <span class="status-dot"></span>
+            {{ status.state_file_exists ? '已就绪' : '未登录' }}
+          </span>
+          <span v-if="status.running" class="muted" style="font-size:11px;">任务运行中，请勿重复触发</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- 主体容器 -->
+    <div class="app-container">
+      <div class="shell">
+        <!-- 侧边 / 底部导航栏（移动端 Teleport 到 body，避免 iOS 合成器因 #app 高度不足而丢弃 fixed 底栏） -->
+        <Teleport to="body" :disabled="!isMobile">
+        <nav class="side-nav" aria-label="功能导航">
+          <button
+            v-for="item in navItems"
+            :key="item.name"
+            type="button"
+            class="nav-btn"
+            :class="{ active: tab === item.name }"
+            @click="openTab(item.name)"
+          >
+            <span class="icon" v-html="ICONS[item.icon]" aria-hidden="true"></span>
+            <span>{{ item.label }}</span>
+          </button>
+        </nav>
+        </Teleport>
+
+        <!-- 主视图区 -->
+        <main class="main-view">
+          <!-- 1. 运行概览页 -->
+          <div v-if="tab === 'overview'">
+            <!-- 指标统计条 -->
+            <div class="stats-grid stagger-item" style="margin-bottom: 16px;">
+              <div class="stat-box card-3d">
+                <div class="stat-label">登录凭证</div>
+                <div class="stat-value" :style="{ color: status.state_file_exists ? '#16a34a' : '#dc2626' }">
+                  {{ status.state_file_exists ? '已就绪' : '未登录' }}
+                </div>
+              </div>
+              <div class="stat-box card-3d">
+                <div class="stat-label">守护状态</div>
+                <div class="stat-value" :style="{ color: status.running ? '#d97706' : '#0f172a' }">
+                  {{ status.running ? '执行中' : (config.auto_run_enabled ? '定时就绪' : '已暂停') }}
+                </div>
+              </div>
+              <div class="stat-box card-3d">
+                <div class="stat-label">已勾选好友</div>
+                <div class="stat-value">
+                  {{ selectedFriendCount }} <span style="font-size: 12px; color: var(--text-muted); font-weight: 400;">/ {{ totalContactCount }} 人</span>
+                </div>
+              </div>
+              <div class="stat-box card-3d">
+                <div class="stat-label">火花好友</div>
+                <div class="stat-value" style="color: #ea580c;">
+                  {{ sparkFriendCount }} <span style="font-size: 12px; color: var(--text-muted); font-weight: 400;">人</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 连续失败 / 熔断告警 -->
+            <div v-if="status.consecutive_failures > 0"
+                 :style="isAutoPaused
+                   ? 'background:#fee2e2;border:1px solid #fca5a5;color:#991b1b;border-radius:12px;padding:11px 14px;margin:0 0 12px;font-size:13px;line-height:1.5;'
+                   : 'background:#ffedd5;border:1px solid #fdba74;color:#9a3412;border-radius:12px;padding:11px 14px;margin:0 0 12px;font-size:13px;line-height:1.5;'">
+              <span v-if="isAutoPaused">
+                ⚠️ 已连续失败 {{ status.consecutive_failures }} 轮，自动发送已暂停（冷却后自动恢复），请检查登录态或页面
+              </span>
+              <span v-else>
+                ⚠️ 上一轮发送失败（连续 {{ status.consecutive_failures }} 轮），请检查登录态；手动「立即续火花」仍可用
+              </span>
+            </div>
+
+            <!-- 发送实时进度 -->
+            <div v-if="status.running && status.send_progress"
+                 style="background:#eff6ff;border:1px solid #bfdbfe;color:#1e40af;border-radius:12px;padding:11px 14px;margin:0 0 12px;font-size:13px;line-height:1.5;">
+              正在发送 <strong>{{ status.send_progress.current || '准备中' }}</strong>
+              （{{ status.send_progress.done }}/{{ status.send_progress.total }}）
+              · ✅ {{ status.send_progress.ok }}　❌ {{ status.send_progress.failed }}
+            </div>
+
+            <!-- 未检测到登录凭证时的醒目指引条 -->
+            <div v-if="!status.state_file_exists" style="background: #fff1f2; border: 1px solid #fecdd3; border-radius: var(--radius-sm); padding: 12px 14px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;">
+              <div style="font-size: 13px; color: #9f1239; line-height: 1.5;">
+                <strong>⚠️ 当前服务器未检测到登录凭证 (state.json)：</strong><br />
+                已在电脑端提取？请双击电脑上的 <code>4.同步登录态到服务器.bat</code> 一键同步，或在右侧直接上传文件。
+              </div>
+              <div style="display: flex; gap: 8px;">
+                <input type="file" ref="quickFileInput" accept=".json" style="display: none;" @change="handleFileUpload" />
+                <el-button type="danger" size="small" @click="$refs.quickFileInput.click()">直接上传 state.json</el-button>
+              </div>
+            </div>
+
+            <!-- 快捷执行面板 -->
+            <div class="card stagger-item no-tilt">
+              <div class="card-header">
+                <div>
+                  <h3 class="card-title">立即触发续火花</h3>
+                  <p class="card-desc">手动启动一次自动化流程，或在下方查看最近执行记录与结果。</p>
+                </div>
+                <div class="mobile-action-grid" style="display: flex; gap: 8px;">
+                  <el-button class="btn-action-fire" :disabled="status.running" @click="runStreak(false)">
+                    {{ status.running ? '任务执行中...' : '立即续火花' }}
+                  </el-button>
+                  <el-button :disabled="status.running" @click="runStreak(true)">
+                    模拟演练 (Dry-Run)
+                  </el-button>
+                </div>
+              </div>
+
+              <!-- 最近执行概况 -->
+              <div class="mobile-stack-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; font-size: 13.5px;">
+                <div class="no-tilt" style="background: var(--bg-surface-subtle); padding: 12px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+                  <div style="color: var(--text-muted); margin-bottom: 3px; font-size: 12px;">最近一次执行时间</div>
+                  <div style="font-weight: 600; color: var(--text-main); font-size: 13px;">{{ lastRunInfo.time || '暂无运行记录' }}</div>
+                </div>
+                <div class="no-tilt" style="background: var(--bg-surface-subtle); padding: 12px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+                  <div style="color: var(--text-muted); margin-bottom: 3px; font-size: 12px;">执行结果简报</div>
+                  <div style="font-weight: 600; font-size: 13px;" :style="{ color: lastRunInfo.success ? '#16a34a' : '#d97706' }">
+                    {{ lastRunInfo.summary || '就绪待命' }}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 2. 好友与台账页 -->
+          <div v-if="tab === 'friends'">
+            <div class="card stagger-item no-tilt">
+              <div class="card-header">
+                <div>
+                  <h3 class="card-title">好友与消息台账</h3>
+                  <p class="card-desc">自动同步抖音好友列表，一键勾选火花好友，保存后每日定时自动发送。</p>
+                </div>
+                <div class="mobile-action-grid" style="display: flex; gap: 8px; flex-wrap: wrap;">
+                  <el-button type="primary" size="small" class="btn-action-primary" :loading="syncing" @click="syncContacts">
+                    同步联系人
+                  </el-button>
+                  <el-button size="small" @click="autoSelectSparkFriends">
+                    一键勾选火花
+                  </el-button>
+                  <el-button size="small" @click="clearSelectedFriends">
+                    清空勾选
+                  </el-button>
+                  <el-button type="success" size="small" :loading="savingLedger" @click="saveLedgerSelection">
+                    保存勾选配置
+                  </el-button>
+                  <el-button type="danger" size="small" :disabled="selectedFriendCount === 0" @click="batchDeleteSelected">
+                    删除选中 ({{ selectedFriendCount }})
+                  </el-button>
+                </div>
+              </div>
+
+              <!-- 搜索过滤条 -->
+              <div style="margin-bottom: 12px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+                <el-input
+                  v-model="searchKeyword"
+                  placeholder="搜索好友昵称或火花天数..."
+                  clearable
+                  size="small"
+                  style="flex: 1; min-width: 200px;"
+                />
+                <div style="font-size: 12.5px; color: var(--text-muted); white-space: nowrap;">
+                  已勾选 <strong style="color: var(--text-main);">{{ selectedFriendCount }}</strong> 位好友
+                </div>
+              </div>
+
+              <!-- 桌面端表格 (屏幕宽度 >= 769px) -->
+              <!-- 好友卡片网格 (桌面端) -->
+              <div class="desktop-only-table no-scrollbar" style="display: grid; grid-template-columns: 1fr; gap: 12px; max-height: 450px; overflow-y: auto; padding: 4px 2px 4px 0;">
+                <div
+                  v-for="(row, index) in filteredContacts"
+                  :key="row.display_name"
+                  class="friend-card no-tilt"
+                  :class="{ 'is-selected': row.selected }"
+                  :style="{ animationDelay: `${index * 40}ms` }"
+                  style="background: var(--bg-surface-subtle); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 12px 14px; display: flex; align-items: center; gap: 12px; transition: border-color 0.2s, box-shadow 0.2s; position: relative; overflow: hidden; flex-wrap: nowrap; cursor: pointer;"
+                  @click="row.selected = !row.selected"
+                >
+                  <!-- 头像 -->
+                  <img v-if="row.avatar && !avatarErrors.has(row.avatar)" :src="avatarProxy(row.avatar)"
+                    style="width: 44px; height: 44px; border-radius: 50%; object-fit: cover; flex-shrink: 0; border: 2px solid var(--border-color); background: var(--bg-surface-subtle);"
+                    @error="avatarErrors.add(row.avatar)" />
+                  <div v-else style="width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, #007AFF, #5AC8FA); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 600; flex-shrink: 0;">
+                    {{ (row.nickname || '?').charAt(0) }}
+                  </div>
+                  <!-- 昵称 + 火花天数（同一行）+ 时间 -->
+                  <div style="flex: 1; min-width: 0;">
+                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: nowrap;">
+                      <span style="font-weight: 600; color: var(--text-main); font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 60%;">{{ row.nickname }}</span>
+                      <span v-if="row.spark_days && row.spark_days > 0" style="color: #ea580c; font-weight: 600; font-size: 12px; flex-shrink: 0; white-space: nowrap;">
+                        🔥 {{ row.spark_days }} 天
+                      </span>
+                      <span v-else style="color: var(--text-light); font-size: 11px; flex-shrink: 0;">未点亮</span>
+                    </div>
+                    <div style="font-size: 11px; color: var(--text-muted); margin-top: 3px;">{{ formatTime(row.last_sent_at) }}</div>
+                  </div>
+                  <!-- 状态标签 -->
+                  <el-tag v-if="row.last_status === 'success'" type="success" size="small" style="flex-shrink: 0; pointer-events: none;">成功</el-tag>
+                  <el-tag v-else-if="row.last_status === 'failed'" type="danger" size="small" style="flex-shrink: 0; pointer-events: none;">失败</el-tag>
+                  <el-tag v-else type="info" size="small" style="flex-shrink: 0; pointer-events: none;">待发送</el-tag>
+                </div>
+                <div v-if="filteredContacts.length === 0" style="grid-column: 1 / -1; text-align: center; padding: 40px 10px; color: var(--text-muted); font-size: 13px;">
+                  暂无好友数据，请点击上方「同步联系人」拉取列表
+                </div>
+              </div>
+
+              <!-- 手机端专属卡片列表 (屏幕宽度 <= 768px) -->
+              <div class="mobile-only-cards no-scrollbar">
+                <div
+                  v-for="item in filteredContacts"
+                  :key="item.display_name"
+                  class="contact-card-row"
+                  :class="{ 'is-selected': item.selected }"
+                  @click="item.selected = !item.selected"
+                >
+                  <img v-if="item.avatar && !avatarErrors.has(item.avatar)" :src="avatarProxy(item.avatar)" class="avatar-badge"
+                    style="object-fit: cover; border: 1px solid var(--border-color);"
+                    @error="avatarErrors.add(item.avatar)" />
+                  <div v-else class="avatar-badge">{{ (item.nickname || '?').charAt(0) }}</div>
+                  <div class="user-meta">
+                    <div class="user-name">{{ item.nickname }}</div>
+                    <div class="user-sub">{{ formatTime(item.last_sent_at) }}</div>
+                  </div>
+                  <div class="pill-group">
+                    <span v-if="item.spark_days > 0" class="spark-pill">
+                      🔥 {{ item.spark_days }}天
+                    </span>
+                    <span v-else class="no-spark-pill">未点亮</span>
+                    <span class="status-pill-sub" :class="item.last_status || 'pending'">
+                      {{ item.last_status === 'success' ? '成功' : (item.last_status === 'failed' ? '失败' : '待发') }}
+                    </span>
+                  </div>
+                </div>
+                <div v-if="filteredContacts.length === 0" style="text-align: center; padding: 30px 10px; color: var(--text-muted); font-size: 13px;">
+                  暂无好友数据，请点击上方「同步联系人」拉取列表
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 3. 定时与风控设置页 -->
+          <div v-if="tab === 'settings'">
+            <div class="card stagger-item no-tilt">
+              <div class="card-header">
+                <div>
+                  <h3 class="card-title">定时与拟人化风控配置</h3>
+                  <p class="card-desc">配置每日自动执行时间、随机抖动延迟与安全发送间隔，保护主号安全。</p>
+                </div>
+                
+              </div>
+
+              <el-form label-position="top" style="max-width: 600px;">
+                <el-form-item label="每日自动发送时间 (24小时制)">
+                  <el-input v-model="config.schedule_time" disabled placeholder="例如 00:00" style="max-width: 200px;" />
+                  <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">建议设置在晚间 20:00 ~ 22:30 之间。</div>
+                </el-form-item>
+
+                <el-form-item label="随机时间抖动 (分钟)">
+                  <el-input-number :controls="false" v-model="config.jitter_minutes" disabled :min="0" :max="60" />
+                  <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">在设定时间的 0 ~ N 分钟内随机启动，模拟真人不规律上线。</div>
+                </el-form-item>
+
+                <div class="mobile-stack-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                  <el-form-item label="好友发送最小间隔 (秒)">
+                    <el-input-number :controls="false" v-model="config.send_gap_min" disabled :min="1" :max="30" />
+                  </el-form-item>
+                  <el-form-item label="好友发送最大间隔 (秒)">
+                    <el-input-number :controls="false" v-model="config.send_gap_max" disabled :min="1" :max="60" />
+                  </el-form-item>
+                </div>
+
+                <el-form-item label="固定发送文案（不可修改）">
+                  <div style="padding: 10px 14px; background: var(--bg-surface-subtle); border: 1px solid var(--border-color); border-radius: 6px; font-size: 13.5px; color: var(--text-main); line-height: 1.6; white-space: pre-wrap;">{{ (config.messages || []).join('\n') || '—' }}</div>
+                </el-form-item>
+
+                <el-form-item label="定时任务开关">
+                  <el-switch v-model="config.auto_run_enabled" disabled active-text="开启每日自动定时执行" />
+                </el-form-item>
+              </el-form>
+            </div>
+          </div>
+
+          <!-- 4. 运行日志终端页 -->
+          <div v-if="tab === 'logs'" class="logs-pane">
+            <div class="terminal-box stagger-item" style="max-width: 100%; animation-delay: 0.1s;">
+              <div class="terminal-header">
+                <span>douyin-cloud-streak.log</span>
+                <button type="button" class="refresh-dot" @click="fetchLogs" title="刷新日志" style="width: 12px; height: 12px; border-radius: 50%; background: #f97316; border: none; cursor: pointer; padding: 0; flex-shrink: 0; transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);"></button>
+              </div>
+              <pre class="terminal-body" id="terminal-view">{{ logsContent || '暂无日志输出，点击右上角“刷新日志”获取。' }}</pre>
+            </div>
+          </div>
+          <!-- 5. 凭证状态页 -->
+          <div v-if="tab === 'credentials'">
+            <div class="card-3d stagger-item" style="padding: 20px; background: var(--bg-surface-subtle); border-radius: var(--radius-md); border: 1px solid var(--border-color); max-width: 520px; animation-delay: 0.1s;">
+              <div style="font-size: 15px; font-weight: 600; margin-bottom: 8px;">
+                当前凭证状态:
+                <span :style="{ color: status.state_file_exists ? '#16a34a' : '#dc2626' }">
+                  {{ status.state_file_exists ? '✓ 已检测到有效登录态' : '✗ 未检测到登录态' }}
+                </span>
+              </div>
+              <div style="font-size: 12.5px; color: var(--text-muted); line-height: 1.6;">
+                若凭证过期失效，可在下方直接扫码重新提取，或上传新的 state.json。
+              </div>
+            </div>
+
+            <div class="card stagger-item no-tilt" style="margin-top:16px; padding:20px; max-width:520px; animation-delay:0.2s;">
+              <div style="font-size:15px; font-weight:600; margin-bottom:6px;">扫码提取登录态</div>
+              <div style="font-size:12.5px; color:var(--text-muted); line-height:1.6; margin-bottom:14px;">
+                在运行本程序的电脑上自动打开浏览器，用抖音 App 扫码并确认登录，登录态会直接保存为 state.json，无需手动上传，最长等待 5 分钟。
+              </div>
+              <el-button type="primary" :loading="extractRunning" @click="startExtract">
+                {{ extractRunning ? '提取进行中…' : '启动扫码提取' }}
+              </el-button>
+              <div v-if="extractStatus" style="margin-top:12px; font-size:13px; color:#1e40af; line-height:1.6;">{{ extractStatus }}</div>
+              <div v-if="extractScreenshot" style="margin-top:12px;">
+                <img :src="extractScreenshot" alt="登录二维码" style="max-width:300px; width:100%; border-radius:12px; border:1px solid var(--border-color); display:block;" />
+                <div style="font-size:12px; color:var(--text-muted); margin-top:6px;">用抖音 App 扫描上方二维码，并在手机上确认登录</div>
+              </div>
+              <div v-if="extractResult" :style="(extractResult.success ? 'background:#dcfce7; border-color:#86efac; color:#166534;' : 'background:#fee2e2; border-color:#fca5a5; color:#991b1b;') + 'border:1px solid; border-radius:12px; padding:10px 14px; margin-top:14px; font-size:13px; line-height:1.5;'">
+                {{ extractResult.message }}
+              </div>
+            </div>
+          </div>
+          <!-- 6. 邮箱告警配置页 -->
+          <div v-if="tab === 'email'">
+
+            <!-- 顶部两个可点击的小框架（WAAPI 像素手风琴） -->
+            <div id="emailBar" style="display:flex; gap:10px; margin-bottom:16px; max-width:340px;">
+              <div class="card no-tilt" style="width:165px; flex:0 0 auto; display:flex; align-items:center; justify-content:center; gap:8px; padding:12px 8px; cursor:pointer; box-sizing:border-box; overflow:hidden;"
+                   :style="emailBtnStyle('smtp')"
+                   @click="selectEmail('smtp')">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" :stroke="emailSubView === 'smtp' ? '#007aff' : 'var(--text-muted)'" stroke-width="2" style="flex-shrink:0;"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                <span style="font-size:13px; font-weight:600; white-space:nowrap; overflow:hidden; max-width:120px; transition:opacity 1.1s ease, max-width 1.1s ease;" :style="(emailSubView === 'text' ? 'opacity:0; max-width:0;' : 'opacity:1; max-width:120px;') + (emailSubView === 'smtp' ? 'color:#007aff;' : '')">卡死告警邮箱设置</span>
+              </div>
+
+              <div class="card no-tilt" style="width:165px; flex:0 0 auto; display:flex; align-items:center; justify-content:center; gap:8px; padding:12px 8px; cursor:pointer; box-sizing:border-box; overflow:hidden;"
+                   :style="emailBtnStyle('text')"
+                   @click="selectEmail('text')">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" :stroke="emailSubView === 'text' ? '#ff7a00' : 'var(--text-muted)'" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                <span style="font-size:13px; font-weight:600; white-space:nowrap; overflow:hidden; max-width:120px; transition:opacity 1.1s ease, max-width 1.1s ease;" :style="(emailSubView === 'smtp' ? 'opacity:0; max-width:0;' : 'opacity:1; max-width:120px;') + (emailSubView === 'text' ? 'color:#ff7a00;' : '')">告警文本自定义</span>
+              </div>
+            </div>
+
+            <!-- 下方内容：卡死告警邮箱设置（SMTP） -->
+            <div v-if="emailSubView === 'smtp'">
+              <div class="card stagger-item no-tilt">
+                <div class="card-header">
+                  <div>
+                    <h3 class="card-title">卡死告警邮箱设置</h3>
+                    <p class="card-desc">看门狗检测到程序卡死时，自动用此邮箱发送告警邮件，内含卡死时间与线程栈。</p>
+                  </div>
+                </div>
+
+                <el-form label-position="top" style="max-width: 620px;">
+                  <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 16px;">
+                    <el-form-item label="SMTP 发信服务器">
+                      <el-input v-model="emailCfg.smtp_host" placeholder="例如 smtp.qq.com" />
+                    </el-form-item>
+                    <el-form-item label="端口（465=SSL）">
+                      <el-input-number :controls="false" v-model="emailCfg.smtp_port" :min="1" :max="65535" style="width:100%;" />
+                    </el-form-item>
+                  </div>
+
+                  <el-form-item label="发信邮箱地址">
+                    <el-input v-model="emailCfg.smtp_user" placeholder="例如 name@example.com" />
+                  </el-form-item>
+
+                  <el-form-item label="SMTP 授权码（不是登录密码；留空表示不修改）">
+                    <el-input v-model="emailCfg.smtp_pass" type="password" show-password autocomplete="new-password" name="smtpauthcode" data-lpignore="true" placeholder="已保存授权码，留空保持不变；如要更换才填写新授权码" />
+                  </el-form-item>
+
+                  <el-form-item label="告警收件地址（多个地址用英文逗号分隔）">
+                    <el-input v-model="emailCfg.mail_to" placeholder="不填则发给发信邮箱自己" />
+                  </el-form-item>
+                </el-form>
+
+                <div style="display:flex; gap:12px; flex-wrap:wrap;">
+                  <el-button type="primary" :loading="savingEmail" @click="saveEmailForm">保存邮箱配置</el-button>
+                  <el-button :loading="testingEmail" @click="sendTestEmail">发送测试邮件</el-button>
+                </div>
+              </div>
+            </div>
+
+            <!-- 下方内容：告警文本自定义 -->
+            <div v-if="emailSubView === 'text'">
+              <div class="card stagger-item no-tilt">
+                <div class="card-header">
+                  <div>
+                    <h3 class="card-title">告警文本自定义</h3>
+                    <p class="card-desc">自定义邮件主题与正文（报错文本），支持占位符在发送时自动替换。</p>
+                  </div>
+                </div>
+                <el-form label-position="top" style="max-width: 620px;">
+                  <el-form-item label="邮件主题">
+                    <el-input v-model="emailCfg.subject" />
+                  </el-form-item>
+                  <el-form-item label="邮件正文（报错文本）">
+                    <el-input v-model="emailCfg.body" type="textarea" :rows="9" />
+                  </el-form-item>
+                  <div style="font-size:12px; color:var(--text-muted); line-height:1.9;">
+                    可用占位符：{host} 主机名 · {host_ip} 内网IP · {time} 触发时间 · {age} 卡死持锁秒数 · {threshold} 看门狗阈值 · {stack} 线程栈
+                  </div>
+                </el-form>
+                <div style="display:flex; gap:12px; flex-wrap:wrap;">
+                  <el-button type="primary" :loading="savingEmail" @click="saveEmailForm">保存邮箱配置</el-button>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </main>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- 流体背景脚本 -->
+  <script>
+  const fluidVertexShader = `
+    varying vec2 vUv;
+    void main() {
+      vUv = uv;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }
+  `;
+  const fluidFragmentShader = `
+    precision highp float;
+    varying vec2 vUv;
+    uniform float uTime;
+    uniform vec2 uResolution;
+    vec3 permute(vec3 x) { return mod(((x*34.0)+1.0)*x, 289.0); }
+    float snoise(vec2 v){
+      const vec4 C = vec4(0.211324865405187, 0.366025403784439, -0.577350269189626, 0.024390243902439);
+      vec2 i  = floor(v + dot(v, C.yy));
+      vec2 x0 = v -   i + dot(i, C.xx);
+      vec2 i1 = (x0.x > x0.y) ? vec2(1.0, 0.0) : vec2(0.0, 1.0);
+      vec4 x12 = x0.xyxy + C.xxzz;
+      x12.xy -= i1;
+      i = mod(i, 289.0);
+      vec3 p = permute( permute( i.y + vec3(0.0, i1.y, 1.0)) + i.x + vec3(0.0, i1.x, 1.0 ));
+      vec3 m = max(0.5 - vec3(dot(x0,x0), dot(x12.xy,x12.xy), dot(x12.zw,x12.zw)), 0.0);
+      m = m*m; m = m*m;
+      vec3 x = 2.0 * fract(p * C.www) - 1.0;
+      vec3 h = abs(x) - 0.5;
+      vec3 ox = floor(x + 0.5);
+      vec3 a0 = x - ox;
+      m *= 1.79284291400159 - 0.85373472095314 * ( a0*a0 + h*h );
+      vec3 g;
+      g.x  = a0.x  * x0.x  + h.x  * x0.y;
+      g.yz = a0.yz * x12.xz + h.yz * x12.yw;
+      return 130.0 * dot(m, g);
+    }
+    float fbm(vec2 p) {
+      float v = 0.0;
+      float a = 0.5;
+      for(int i = 0; i < 3; i++) { v += a * snoise(p); p *= 2.0; a *= 0.5; }
+      return v;
+    }
+    vec2 rotate(vec2 p, float a) {
+      float c = cos(a), s = sin(a);
+      return vec2(p.x * c - p.y * s, p.x * s + p.y * c);
+    }
+    void main() {
+      vec2 uv = vUv;
+      vec2 p = uv * 2.0;
+      float aspect = uResolution.x / uResolution.y;
+      p.x *= aspect;
+      float t = uTime * 0.02;
+      float wave1 = sin(p.x * 1.2 + p.y * 0.6 + t * 0.4) * 0.5;
+      float wave2 = sin(p.x * 0.5 - p.y * 0.9 + t * 0.25 + 2.0) * 0.5;
+      float wave3 = cos(p.x * 0.8 + p.y * 1.1 + t * 0.3 + 4.0) * 0.3;
+      float waves = wave1 + wave2 + wave3;
+      vec2 q = vec2(fbm(p * 0.7 + vec2(0.0, t) + waves * 0.12), fbm(p * 0.7 + vec2(5.2, 1.3 + t * 0.5) + waves * 0.1));
+      float f = fbm(p * 0.8 + 1.6 * q + t * 0.2 + waves * 0.08);
+      float flow = f * 0.55 + waves * 0.35 + q.x * 0.25;
+      vec3 baseColor = vec3(0.008, 0.006, 0.004);
+      vec3 goldDeepest = vec3(0.12, 0.08, 0.03);
+      vec3 goldDeep = vec3(0.25, 0.17, 0.06);
+      vec3 goldMid = vec3(0.45, 0.32, 0.10);
+      vec3 gold = vec3(0.75, 0.58, 0.20);
+      vec3 goldBright = vec3(0.90, 0.76, 0.40);
+      vec3 goldLight = vec3(0.97, 0.89, 0.65);
+      vec3 goldWhite = vec3(1.0, 0.96, 0.82);
+      vec3 warmWhite = vec3(1.0, 0.98, 0.92);
+      vec3 col = baseColor;
+      col = mix(col, goldDeepest, smoothstep(-0.35, -0.05, flow));
+      col = mix(col, goldDeep, smoothstep(-0.15, 0.15, flow));
+      col = mix(col, goldMid, smoothstep(0.0, 0.3, flow));
+      col = mix(col, gold, smoothstep(0.15, 0.4, flow));
+      col = mix(col, goldBright, smoothstep(0.3, 0.5, flow));
+      col = mix(col, goldLight, smoothstep(0.45, 0.65, flow));
+      col = mix(col, goldWhite, smoothstep(0.6, 0.78, flow));
+      col = mix(col, warmWhite, smoothstep(0.75, 0.9, flow));
+      float e = 0.002;
+      vec2 grad = vec2(fbm(p * 0.8 + vec2(e, 0.0) + q * 0.6 + vec2(t * 0.1, 0.0)) - fbm(p * 0.8 - vec2(e, 0.0) + q * 0.6 + vec2(t * 0.1, 0.0)), fbm(p * 0.8 + vec2(0.0, e) + q * 0.6 + vec2(0.0, t * 0.08)) - fbm(p * 0.8 - vec2(0.0, e) + q * 0.6 + vec2(0.0, t * 0.08))) / (2.0 * e);
+      float silk1 = smoothstep(0.15, 0.65, 1.0 - length(grad - 0.25));
+      col += silk1 * vec3(0.5, 0.4, 0.2) * 0.12;
+      float silk2 = pow(smoothstep(0.35, 0.75, 1.0 - length(grad * 1.4 - 0.4 + sin(t * 0.5) * 0.1)), 2.0);
+      col += silk2 * vec3(0.7, 0.65, 0.5) * 0.15;
+      float silk3 = snoise(p * 5.0 + grad * 1.5 + t * 0.3) * 0.5 + 0.5;
+      col += silk3 * 0.03 * vec3(0.95, 0.85, 0.55);
+      for(int i = 0; i < 3; i++) {
+        float fi = float(i);
+        vec2 rp = rotate(p - vec2(0.0, 0.0), t * 0.03 + fi * 2.094);
+        float band = sin(rp.x * 1.5 + rp.y * 0.8 + t * (0.3 + fi * 0.1) + fi * 3.0) * 0.5 + 0.5;
+        band = pow(band, 8.0 + fi * 3.0);
+        float bandMask = smoothstep(0.2, 0.6, flow + 0.2);
+        col += band * bandMask * vec3(0.7, 0.6, 0.35) * (0.08 - fi * 0.015);
+      }
+      float arcHighlight = smoothstep(0.5, 0.82, sin(flow * 3.14 + t * 0.15) * 0.5 + 0.5);
+      col += arcHighlight * vec3(0.85, 0.7, 0.38) * 0.15;
+      vec2 gp = p * 3.0;
+      float goldNoise = snoise(gp + vec2(t * 0.15, t * 0.1));
+      float goldNoise2 = snoise(gp * 2.3 + vec2(-t * 0.12, t * 0.08));
+      float particles = smoothstep(0.55, 0.85, goldNoise) * smoothstep(0.4, 0.7, goldNoise2);
+      float twinkle = sin(uTime * 2.0 + goldNoise * 20.0) * 0.5 + 0.5;
+      particles *= 0.5 + twinkle * 0.5;
+      col += particles * vec3(0.7, 0.6, 0.4) * 0.18;
+      float fineDust = snoise(p * 8.0 + vec2(t * 0.2, -t * 0.15)) * 0.5 + 0.5;
+      fineDust = pow(fineDust, 6.0);
+      col += fineDust * vec3(1.0, 0.85, 0.5) * 0.12;
+      vec2 center = uv - 0.5;
+      float vignette = 1.0 - dot(center, center) * 1.5;
+      vignette = smoothstep(0.0, 0.75, vignette);
+      col *= vignette;
+      float spot = 1.0 - length(center) * 0.85;
+      spot = smoothstep(0.0, 0.65, spot);
+      col += spot * 0.06 * goldBright;
+      float topGlow = smoothstep(0.0, 0.4, 1.0 - abs(uv.y - 0.15) * 3.0) * smoothstep(0.0, 0.5, uv.x) * smoothstep(0.0, 0.5, 1.0 - uv.x);
+      col += topGlow * vec3(0.6, 0.45, 0.2) * 0.08;
+      float grain = fract(sin(dot(uv * uResolution, vec2(12.9898, 78.233)) + uTime) * 43758.5453);
+      col += (grain - 0.5) * 0.015;
+      col = col / (col + vec3(0.5));
+      col = pow(col, vec3(0.85));
+      col *= vec3(1.02, 1.0, 0.96);
+      gl_FragColor = vec4(col, 1.0);
+    }
+  `;
+  function loadFluidScript(src) {
+    return new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = src;
+      s.onload = resolve;
+      s.onerror = reject;
+      document.head.appendChild(s);
+    });
+  }
+  // 流体背景运行态：进入系统后冻结，停止逐帧 GPU 渲染（桌面端卡顿/GPU 占用主因）
+  let fluidRaf = null;
+  let fluidStopped = false;
+  let fluidPaused = false;
+  let fluidRenderer = null, fluidScene = null, fluidCamera = null;
+  async function initFluidBg() {
+    try {
+      await loadFluidScript('/static/vendor/three.min.js');
+      const canvas = document.getElementById('fluid-canvas');
+      const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance' });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      const scene = new THREE.Scene();
+      const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+      const uniforms = { uTime: { value: 0 }, uResolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) } };
+      const geometry = new THREE.PlaneGeometry(2, 2);
+      const material = new THREE.ShaderMaterial({ vertexShader: fluidVertexShader, fragmentShader: fluidFragmentShader, uniforms });
+      const mesh = new THREE.Mesh(geometry, material);
+      scene.add(mesh);
+      const clock = new THREE.Clock();
+      fluidRenderer = renderer; fluidScene = scene; fluidCamera = camera;
+      let lastFrameTs = 0;
+      const FRAME_INTERVAL_MS = 1000 / 30;  // 限帧30FPS：流体运动极慢，观感一致、GPU开销减半
+      function animate(now) {
+        fluidRaf = requestAnimationFrame(animate);
+        if (fluidPaused) return;
+        if (now - lastFrameTs < FRAME_INTERVAL_MS) return;
+        lastFrameTs = now;
+        uniforms.uTime.value = clock.getElapsedTime();
+        renderer.render(scene, camera);
+        window.__fluidFrames = (window.__fluidFrames || 0) + 1;
+      }
+      animate(0);
+      window.addEventListener('resize', () => {
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        uniforms.uResolution.value.set(window.innerWidth, window.innerHeight);
+        // 背景冻结后，仅在窗口尺寸变化时静态补绘一帧，平时保持零逐帧开销
+        if (fluidStopped) { try { renderer.render(scene, camera); } catch(_) {} }
+      });
+    } catch(e) { console.error('流体背景加载失败:', e); }
+  }
+  // 进入系统后调用：取消逐帧渲染循环，保留最后一帧作为静态背景（幂等，可安全多次调用）
+  window.__setFluidPaused = function (v) {
+    fluidPaused = !!v;
+    if (!fluidPaused) { lastFrameTs = 0; }
+  };
+  window.__stopFluidBg = function () {
+    if (fluidStopped) return;
+    fluidStopped = true;
+    if (fluidRaf) { cancelAnimationFrame(fluidRaf); fluidRaf = null; }
+    try { if (fluidRenderer && fluidScene && fluidCamera) fluidRenderer.render(fluidScene, fluidCamera); } catch(_) {}
+  };
+  initFluidBg();
+  </script>
+
+  <!-- 引入依赖脚本 -->
+  <script src="/static/vendor/vue.global.prod.js"></script>
+  <script src="/static/vendor/element-plus.full.min.js"></script>
+  <script src="/static/vendor/axios.min.js"></script>
+
+  <script>
+    const { createApp, ref, reactive, computed, onMounted, onUnmounted, nextTick, watch } = Vue;
+
+    const ICONS = {
+      fire: `<svg class="icon-svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12.003 2c-.12 0-.24.03-.35.08-1.56.75-3.66 2.37-4.52 4.41-.9 2.13-.53 4.2.49 5.86-.48-.68-.86-1.48-1.02-2.35-.07-.37-.47-.59-.83-.46-.35.12-.55.49-.47.85.34 1.63 1.13 3.09 2.24 4.19C6.46 15.65 6 17.27 6 19c0 2.76 2.69 5 6 5s6-2.24 6-5c0-1.89-.54-3.57-1.74-4.88-.23-.25-.49-.48-.76-.69 1.15-1.12 1.95-2.61 2.29-4.28.08-.36-.12-.73-.47-.85-.36-.13-.76.09-.83.46-.16.87-.54 1.67-1.02 2.35 1.02-1.66 1.39-3.73.49-5.86-.86-2.04-2.96-3.66-4.52-4.41-.11-.05-.23-.08-.35-.08zM12 14c1.66 0 3 1.34 3 3 0 1.66-1.34 3-3 3s-3-1.34-3-3c0-1.66 1.34-3 3-3z"/></svg>`,
+      grid: `<svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>`,
+      users: `<svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>`,
+      clock: `<svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>`,
+      terminal: `<svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>`,
+      key: `<svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2l-2 2m-1.5 1.5L14 9m-1.5 1.5l-2.5 2.5a6 6 0 1 1-8.5 8.5 6 6 0 0 1 8.5-8.5l2.5-2.5m1.5-1.5L16 7m1.5-1.5L20 4"></path></svg>`,
+      mail: `<svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>`,
+      reload: `<svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"></path><path d="M1 20v-6h6"></path><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>`
+    };
+
+    const app = createApp({
+      setup() {
+        const tab = ref('overview');
+        const syncing = ref(false);
+        const savingLedger = ref(false);
+        const savingConfig = ref(false);
+        // 移动端标记：仅移动端把 fixed 底栏/横幅 Teleport 到 body，脱离 #app 层叠上下文（PC 端留在 grid 内）
+        const isMobile = ref(false);
+        try {
+          const mqList = window.matchMedia('(max-width: 768px)');
+          isMobile.value = mqList.matches;
+          const onMqChange = (e) => { isMobile.value = e.matches; };
+          mqList.addEventListener('change', onMqChange);
+          onUnmounted(() => mqList.removeEventListener('change', onMqChange));
+        } catch (e) {}
+        const appVersion = ref('2.2');
+        onUnmounted(() => { if (statusTimer) clearInterval(statusTimer); });
+        let statusTimer = null;
+        const searchKeyword = ref('');
+        const avatarErrors = ref(new Set());
+        const avatarProxy = (url) => url ? `/api/avatar?url=${encodeURIComponent(url)}` : '';
+
+        // ── iOS 风格顶部横幅弹窗 ──────────────────────────────────────
+        const iosBanner = reactive({ visible: false, title: '', subtitle: '' });
+        let iosBannerTimer = null;
+        const showIOSBanner = (title, subtitle, duration = 3200) => {
+          iosBanner.title = title;
+          iosBanner.subtitle = subtitle || '';
+          iosBanner.visible = true;
+          if (iosBannerTimer) clearTimeout(iosBannerTimer);
+          iosBannerTimer = setTimeout(() => { iosBanner.visible = false; }, duration);
+        };
+        const logsContent = ref('');
+        const extractRunning = ref(false);
+        const extractStatus = ref('');
+        const extractResult = ref(null);
+        const extractScreenshot = ref('');
+        let extractShotUrl = '';
+
+        const navItems = [
+          { name: 'overview', label: '概览', icon: 'grid' },
+          { name: 'friends', label: '好友', icon: 'users' },
+          { name: 'settings', label: '定时', icon: 'clock' },
+          { name: 'logs', label: '日志', icon: 'terminal' },
+          { name: 'credentials', label: '凭证', icon: 'key' },
+          { name: 'email', label: '邮箱', icon: 'mail' },
+        ];
+
+        const status = reactive({
+          version: '2.0',
+          state_file_exists: false,
+          running: false,
+          consecutive_failures: 0,
+          auto_paused_until: 0,
+          send_progress: null,
+        });
+        const BASE_DOC_TITLE = '抖音自动续火花 · Douyin Cloud Streak';
+        let pollDelay = 10000;
+
+        const config = reactive({
+          schedule_time: '00:00',
+          jitter_minutes: 0,
+          send_gap_min: 1,
+          send_gap_max: 2,
+          messages: ['[续火花吧]'],
+          auto_run_enabled: true
+        });
+
+        const messagesText = ref('');
+        const contacts = ref([]);
+        const lastRunInfo = reactive({
+          time: '',
+          summary: '',
+          success: true
+        });
+
+        const api = axios.create();
+        const totalContactCount = computed(() => contacts.value.length);
+        const selectedFriendCount = computed(() => contacts.value.filter(c => c.selected).length);
+        const sparkFriendCount = computed(() => contacts.value.filter(c => (c.spark_days || 0) > 0).length);
+
+        const filteredContacts = computed(() => {
+          const kw = searchKeyword.value.trim().toLowerCase();
+          if (!kw) return contacts.value;
+          return contacts.value.filter(c => 
+            (c.nickname && c.nickname.toLowerCase().includes(kw)) ||
+            (String(c.spark_days || '').includes(kw))
+          );
+        });
+
+        const isAutoPaused = computed(() =>
+          Number(status.auto_paused_until || 0) * 1000 > Date.now()
+        );
+
+        const formatTime = (timeStr) => {
+          if (!timeStr) return '今日待发送';
+          try {
+            const d = new Date(timeStr);
+            if (isNaN(d.getTime())) return String(timeStr);
+            const m = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            const h = String(d.getHours()).padStart(2, '0');
+            const min = String(d.getMinutes()).padStart(2, '0');
+            return `上次：${m}-${day} ${h}:${min}`;
+          } catch (e) {
+            return '今日待发送';
+          }
+        };
+
+        const loadStatus = async () => {
+          try {
+            const res = await api.get('/api/status');
+            status.version = res.data.version || status.version;
+            status.running = res.data.running;
+            status.state_file_exists = res.data.state_file_exists;
+            status.consecutive_failures = res.data.consecutive_failures || 0;
+            status.auto_paused_until = res.data.auto_paused_until || 0;
+            status.send_progress = res.data.send_progress || null;
+            // 连续失败时标签页标题加警示（比声音/震动可靠，不依赖浏览器前台或静音）
+            document.title = status.consecutive_failures > 0
+              ? `⚠️ 连续失败${status.consecutive_failures}轮 · 抖音自动续火花`
+              : BASE_DOC_TITLE;
+            // 动态轮询：发送中 1.5s 看实时进度，空闲 10s
+            const wantDelay = status.running ? 1500 : 10000;
+            if (statusTimer && wantDelay !== pollDelay) {
+              clearInterval(statusTimer);
+              statusTimer = setInterval(loadStatus, wantDelay);
+              pollDelay = wantDelay;
+            }
+          } catch (e) {
+            console.error('Failed to load status', e);
+          }
+        };
+
+        const loadConfig = async () => {
+          try {
+            const res = await api.get('/api/config');
+            Object.assign(config, res.data);
+            messagesText.value = (res.data.messages || []).join('\n');
+          } catch (e) {
+            console.error('Failed to load config', e);
+          }
+        };
+
+        const loadLedger = async () => {
+          try {
+            const res = await api.get('/api/ledger');
+            const list = res.data.contacts || res.data.entries || [];
+            contacts.value = list.map(item => ({
+              display_name: item.display_name || item.nickname || '',
+              nickname: item.nickname || item.display_name || '',
+              avatar: item.avatar || '',
+              spark_days: Number(item.spark_days || item.streak_days || 0),
+              streak_days: Number(item.streak_days || item.spark_days || 0),
+              selected: Boolean(item.selected),
+              last_status: item.last_status || (item.last_sent_at ? 'success' : 'pending'),
+              last_sent_at: item.last_sent_at || ''
+            }));
+            if (res.data.last_run) {
+              lastRunInfo.time = res.data.last_run.time || '';
+              lastRunInfo.summary = res.data.last_run.summary || '';
+              lastRunInfo.success = res.data.last_run.success !== false;
+            }
+          } catch (e) {
+            console.error('Failed to load ledger', e);
+          }
+          nextTick(() => { if (typeof init3DCards === 'function') init3DCards(); });
+        };
+
+        const fetchLogs = async () => {
+          try {
+            const res = await api.get('/api/logs');
+            logsContent.value = res.data.logs || '';
+            nextTick(() => {
+              const el = document.getElementById('terminal-view');
+              if (el) el.scrollTop = el.scrollHeight;
+            });
+          } catch (e) {
+            console.error('Failed to fetch logs', e);
+          }
+        };
+
+        const clearLogs = () => {
+          logsContent.value = '';
+        };
+
+        // ── 邮箱告警配置 ──────────────────────────────────────
+        const emailCfg = reactive({
+          smtp_host: '', smtp_port: 465, smtp_user: '', smtp_pass: '',
+          mail_to: '', subject: '', body: ''
+        });
+        const emailSubView = ref('');
+        const playEmailEntrance = () => {
+          nextTick(() => {
+            const bar = document.getElementById('emailBar');
+            if (!bar) return;
+            [...bar.children].forEach((el, i) => {
+              el.animate([{ opacity: 0 }, { opacity: 1 }],
+                { duration: 1000, delay: 100 + i * 120, easing: 'cubic-bezier(0.4,0,0.2,1)', fill: 'both' });
+            });
+          });
+        };
+        const openTab = (name) => {
+          tab.value = name;
+          if (name === 'email') { playEmailEntrance(); }
+          else { emailSubView.value = ''; resetEmailBar(); }
+        };
+        let emailAnims = [];
+        const EMAIL_EASING = 'cubic-bezier(0.65,0,0.35,1)';
+        const EMAIL_MS = 1200;
+
+        // Width targets per state (flow layout, no transforms -> nothing can fly)
+        const emailWidthTargets = (W, state) => {
+          if (state === 'smtp') return [W - 64, 54];
+          if (state === 'text') return [54, W - 64];
+          return [165, 165];
+        };
+
+        const runEmailAnim = (state, duration) => {
+          const bar = document.getElementById('emailBar');
+          if (!bar) return;
+          const W = bar.parentElement.clientWidth;
+          const tg = emailWidthTargets(W, state);
+
+          // 1) measure the CURRENT visual geometry BEFORE cancelling
+          const cur = [];
+          for (let i = 0; i < 2; i++) {
+            cur.push(bar.children[i].getBoundingClientRect().width);
+          }
+          const barCur = bar.getBoundingClientRect().width;
+
+          // 2) cancel, then freeze the measured geometry into base styles (no snap)
+          emailAnims.forEach(a => { try { a.cancel(); } catch(_) {} });
+          emailAnims = [];
+          for (let i = 0; i < 2; i++) {
+            bar.children[i].style.width = cur[i] + 'px';
+          }
+          bar.style.maxWidth = barCur + 'px';
+
+          // 3) animate from the current visual state to targets
+          for (let i = 0; i < 2; i++) {
+            const el = bar.children[i];
+            if (Math.abs(cur[i] - tg[i]) > 0.5) {
+              emailAnims.push(el.animate(
+                { width: [cur[i] + 'px', tg[i] + 'px'] },
+                { duration, easing: EMAIL_EASING, fill: 'forwards' }
+              ));
+            }
+          }
+          const barTarget = state === '' ? 340 : W;
+          if (Math.abs(barCur - barTarget) > 1) {
+            emailAnims.push(bar.animate(
+              { maxWidth: [barCur + 'px', barTarget + 'px'] },
+              { duration, easing: EMAIL_EASING, fill: 'forwards' }
+            ));
+          }
+        };
+
+        const selectEmail = (name) => {
+          const next = emailSubView.value === name ? '' : name;
+          runEmailAnim(next, EMAIL_MS);
+          emailSubView.value = next;
+        };
+
+        const resetEmailBar = () => {
+          const bar = document.getElementById('emailBar');
+          if (!bar) return;
+          emailAnims.forEach(a => { try { a.cancel(); } catch(_) {} });
+          emailAnims = [];
+          bar.style.maxWidth = '340px';
+          const btns = bar.children;
+          for (let i = 0; i < btns.length; i++) {
+            btns[i].style.width = '165px';
+            btns[i].style.transform = '';
+          }
+        };
+
+        window.addEventListener('resize', () => {
+          if (emailSubView.value) runEmailAnim(emailSubView.value, 400);
+        });
+
+        const emailBtnStyle = (name) => {
+          const active = emailSubView.value === name;
+          const rgb = name === 'smtp' ? '0,122,255' : '255,122,0';
+          return active
+            ? 'background:rgba(' + rgb + ',0.12); box-shadow:0 4px 16px rgba(' + rgb + ',0.22);'
+            : '';
+        };
+        const savingEmail = ref(false);
+        const testingEmail = ref(false);
+
+        const loadEmailConfig = async () => {
+          try {
+            const res = await api.get('/api/email-config');
+            Object.assign(emailCfg, res.data);
+            emailCfg.smtp_pass = '';   // 授权码只回掩码，输入框始终留空
+          } catch (e) {
+            console.error('Failed to load email config', e);
+          }
+        };
+
+        const saveEmailForm = async () => {
+          savingEmail.value = true;
+          try {
+            const { has_pass: _ignored, ...payload } = emailCfg;
+            const res = await api.post('/api/email-config', payload);
+            if (res.data.ok) {
+              ElementPlus.ElMessage.success('邮箱配置已保存！');
+              Object.assign(emailCfg, res.data.config);
+              emailCfg.smtp_pass = '';
+            }
+          } catch (e) {
+            ElementPlus.ElMessage.error('保存失败: ' + (e.response?.data?.detail || e.message));
+          } finally {
+            savingEmail.value = false;
+          }
+        };
+
+        const sendTestEmail = async () => {
+          testingEmail.value = true;
+          try {
+            const res = await api.post('/api/email-test');
+            if (res.data.ok) {
+              ElementPlus.ElMessage.success('测试邮件已发送，请查收（注意垃圾箱）');
+            }
+          } catch (e) {
+            ElementPlus.ElMessage.error('测试邮件失败: ' + (e.response?.data?.detail || e.message));
+          } finally {
+            testingEmail.value = false;
+          }
+        };
+
+        const loadAll = async () => {
+          await Promise.all([loadStatus(), loadConfig(), loadLedger(), fetchLogs(), loadEmailConfig()]);
+        };
+
+        const runStreak = async (dryRun = false) => {
+          if (selectedFriendCount.value === 0) {
+            ElementPlus.ElMessage.warning('⚠️ 您尚未勾选任何好友！请在「好友与消息」中勾选好友后再执行。');
+            tab.value = 'friends';
+            return;
+          }
+          try {
+            const res = await api.post('/api/run', { dry_run: dryRun });
+            if (res.data.ok) {
+              showIOSBanner('启动成功', '');
+              loadAll();
+            } else {
+              showIOSBanner('启动失败', '');
+            }
+          } catch (e) {
+            showIOSBanner('启动失败', '');
+          }
+        };
+
+        const syncContacts = async () => {
+          syncing.value = true;
+          try {
+            showIOSBanner('正在同步', '后台同步联系人列表，预计 10~20 秒...');
+            await api.post('/api/sync');
+            
+            let checks = 0;
+            const timer = setInterval(async () => {
+              checks++;
+              try {
+                const resLedger = await api.get('/api/ledger');
+                const isFetching = resLedger.data.fetching;
+                if (!isFetching || checks >= 25) {
+                  clearInterval(timer);
+                  syncing.value = false;
+                  await loadLedger();
+                  const total = contacts.value.length;
+                  const sparks = contacts.value.filter(c => (c.spark_days || 0) > 0).length;
+                  if (total > 0) {
+                    showIOSBanner('同步完成', `已获取 ${total} 位好友，${sparks} 位带火花`);
+                  } else {
+                    showIOSBanner('同步失败', '未能读取到联系人，请确认已上传登录凭证');
+                  }
+                }
+              } catch (err) {
+                clearInterval(timer);
+                syncing.value = false;
+              }
+            }, 1500);
+          } catch (e) {
+            syncing.value = false;
+            showIOSBanner('同步失败', e.response?.data?.detail || e.message);
+          }
+        };
+
+        const autoSelectSparkFriends = () => {
+          let count = 0;
+          contacts.value.forEach(c => {
+            if ((c.spark_days || 0) > 0) {
+              c.selected = true;
+              count++;
+            }
+          });
+          ElementPlus.ElMessage.success(`已自动勾选 ${count} 位火花好友，请点击“保存勾选配置”！`);
+        };
+
+        const clearSelectedFriends = () => {
+          contacts.value.forEach(c => c.selected = false);
+          ElementPlus.ElMessage.info('已清空全部勾选，请点击“保存勾选配置”生效。');
+        };
+
+        const deleteFriend = async (row) => {
+          const name = row.display_name || row.nickname;
+          if (!confirm(`确定要删除好友「${name}」吗？删除后需重新同步联系人才能恢复。`)) return;
+          try {
+            await api.post('/api/ledger/delete', { display_name: name });
+            contacts.value = contacts.value.filter(c => (c.display_name || c.nickname) !== name);
+            ElementPlus.ElMessage.success(`已删除「${name}」`);
+          } catch (e) {
+            ElementPlus.ElMessage.error('删除失败: ' + (e.response?.data?.detail || e.message));
+          }
+        };
+
+        const batchDeleteSelected = async () => {
+          const selected = contacts.value.filter(c => c.selected);
+          if (selected.length === 0) {
+            ElementPlus.ElMessage.warning('请先勾选要删除的好友');
+            return;
+          }
+          const names = selected.map(c => c.display_name || c.nickname);
+          if (!confirm(`确定要删除选中的 ${names.length} 位好友吗？\n\n${names.slice(0, 5).join('、')}${names.length > 5 ? ' 等' : ''}\n\n删除后需重新同步联系人才能恢复。`)) return;
+          try {
+            const res = await api.post('/api/ledger/batch-delete', { display_names: names });
+            const deleted = res.data.deleted || 0;
+            const nameSet = new Set(names);
+            contacts.value = contacts.value.filter(c => !nameSet.has(c.display_name || c.nickname));
+            ElementPlus.ElMessage.success(`已成功删除 ${deleted} 位好友`);
+          } catch (e) {
+            ElementPlus.ElMessage.error('批量删除失败: ' + (e.response?.data?.detail || e.message));
+          }
+        };
+
+        const saveLedgerSelection = async () => {
+          savingLedger.value = true;
+          try {
+            const selectedNames = contacts.value.filter(c => c.selected).map(c => c.display_name || c.nickname);
+            const res = await api.post('/api/ledger/selection', { selected_names: selectedNames });
+            if (res.data.ok) {
+              ElementPlus.ElMessage.success(`好友勾选配置已成功保存！当前生效勾选 ${selectedNames.length} 人`);
+              await loadLedger();
+            }
+          } catch (e) {
+            ElementPlus.ElMessage.error('保存失败: ' + (e.response?.data?.detail || e.message));
+          } finally {
+            savingLedger.value = false;
+          }
+        };
+
+        const saveConfigForm = async () => {
+          savingConfig.value = true;
+          try {
+            // 发送文案已在服务器固定，不从网页提交，保留 config 加载到的固定值
+            const payload = { ...config };
+            const res = await api.post('/api/config', payload);
+            if (res.data.ok) {
+              ElementPlus.ElMessage.success('定时与风控设置已保存！');
+            }
+          } catch (e) {
+            ElementPlus.ElMessage.error('保存失败: ' + (e.response?.data?.detail || e.message));
+          } finally {
+            savingConfig.value = false;
+          }
+        };
+
+        const handleFileUpload = async (event) => {
+          const file = event.target.files[0];
+          if (!file) return;
+          const formData = new FormData();
+          formData.append('file', file);
+          try {
+            showIOSBanner('上传中', '正在上传通行证凭据...');
+            const res = await api.post('/api/upload-state', formData, {
+              headers: { 'Content-Type': 'multipart/form-data' }
+            });
+            if (res.data.ok) {
+              showIOSBanner('上传成功', '通行证凭证已就绪');
+              await loadStatus();
+            }
+          } catch (e) {
+            showIOSBanner('上传失败', e.response?.data?.detail || e.message);
+          }
+        };
+
+        // 页面直接进入，并加载本机保存的配置与运行状态。
+        const enterSystem = async () => {
+          try { if (typeof window.__stopFluidBg === 'function') window.__stopFluidBg(); } catch (_) {}
+          await loadAll();
+          if (statusTimer) clearInterval(statusTimer);
+          pollDelay = status.running ? 1500 : 10000;
+          statusTimer = setInterval(loadStatus, pollDelay);
+          init3DCards();
+        };
+
+        // 导航栏滚动效果：透明 → 毛玻璃
+        const initScrollEffect = () => {
+          const topbar = document.querySelector('.topbar');
+          if (!topbar) return;
+          const onScroll = () => {
+            if (window.scrollY > 4) {
+              topbar.classList.add('scrolled');
+            } else {
+              topbar.classList.remove('scrolled');
+            }
+          };
+          window.addEventListener('scroll', onScroll, { passive: true });
+          onScroll();
+        };
+
+        // 3D 倾斜卡片：自动选中页面内所有卡片/数字方块，根据鼠标位置计算旋转角度
+        const init3DCards = () => {
+          nextTick(() => {
+            const cards = document.querySelectorAll(
+              '.main-view .card, .stat-box, .card-3d'
+            );
+            cards.forEach(card => {
+              if (card.classList.contains('no-tilt')) return;
+              if (card._3dBound) return;
+              card._3dBound = true;
+              card.style.transformStyle = 'preserve-3d';
+              // 不再为每张卡片常驻 will-change（会为几十张卡各建合成层、占用内存）；transform 由浏览器按需合成
+              card.style.transition = 'transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.3s ease';
+
+              // 双保险：入场动画结束后锁定 opacity 为 1，防止任何操作让 stagger-item 回到隐藏态
+              if (card.classList.contains('stagger-item')) {
+                card.addEventListener('animationend', () => { card.style.opacity = '1'; });
+              }
+
+              // 好友卡片使用更小的倾斜幅度
+              let maxAngle = 13, lift = '-5px', scaleVal = '1.025', hoverShadow = '0 24px 60px rgba(0,0,0,0.18), 0 10px 24px rgba(0,0,0,0.1)';
+              if (card.classList.contains('friend-card')) {
+                maxAngle = 5; lift = '-2px'; scaleVal = '1.01';
+                hoverShadow = '0 12px 30px rgba(0,0,0,0.1), 0 4px 12px rgba(0,0,0,0.06)';
+              }
+
+              // 节流：限制 mousemove 处理频率，防止边界抽搐
+              let ticking = false;
+              let lastX = 0, lastY = 0;
+              let cachedRect = null;
+              card.addEventListener('mouseenter', () => { cachedRect = card.getBoundingClientRect(); });
+              card.addEventListener('mousemove', (e) => {
+                lastX = e.clientX;
+                lastY = e.clientY;
+                if (ticking) return;
+                ticking = true;
+                requestAnimationFrame(() => {
+                  if (!cachedRect) cachedRect = card.getBoundingClientRect();
+                  const rect = cachedRect;
+                  const x = lastX - rect.left;
+                  const y = lastY - rect.top;
+                  const centerX = rect.width / 2;
+                  const centerY = rect.height / 2;
+                  // 平滑限制：边界附近用非线性映射，避免角度突变
+                  const rawX = (x - centerX) / centerX;
+                  const rawY = (y - centerY) / centerY;
+                  const smoothX = rawX * (1 - Math.abs(rawX) * 0.25);
+                  const smoothY = rawY * (1 - Math.abs(rawY) * 0.25);
+                  const rotateX = smoothY * -maxAngle;
+                  const rotateY = smoothX * maxAngle;
+                  card.style.transform = `perspective(650px) rotateX(${rotateX.toFixed(2)}deg) rotateY(${rotateY.toFixed(2)}deg) translateY(${lift}) scale(${scaleVal})`;
+                  card.style.boxShadow = hoverShadow;
+                  ticking = false;
+                });
+              });
+              card.addEventListener('mouseleave', () => {
+                cachedRect = null;
+                card.style.transform = 'perspective(650px) rotateX(0) rotateY(0) translateY(0) scale(1)';
+                card.style.boxShadow = '';
+              });
+            });
+          });
+        };
+
+        // 切换 tab 时重新初始化3D卡片（v-if 会重建 DOM）
+        watch(tab, () => {
+          init3DCards();
+        });
+
+        onMounted(async () => {
+          const appEl = document.getElementById('app');
+          if (appEl) appEl.style.display = '';
+          initScrollEffect();
+          init3DCards();
+          try {
+            const hv = await api.get('/api/health');
+            if (hv.data.version) appVersion.value = hv.data.version;
+          } catch (_) {}
+          try { await enterSystem(); } catch (e) { console.error('页面状态加载失败:', e); }
+        });
+
+
+        async function loadExtractShot(path) {
+          try {
+            const r = await fetch(path + '?t=' + Date.now());
+            if (!r.ok) return;
+            const blob = await r.blob();
+            if (extractShotUrl) URL.revokeObjectURL(extractShotUrl);
+            extractShotUrl = URL.createObjectURL(blob);
+            extractScreenshot.value = extractShotUrl;
+          } catch (e) { console.error(e); }
+        }
+
+
+        async function startExtract() {
+          if (extractRunning.value) return;
+          extractRunning.value = true;
+          extractStatus.value = '正在启动浏览器...';
+          extractResult.value = null;
+          extractScreenshot.value = '';
+          try {
+            const r = await fetch('/api/credentials/extract', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' }
+            });
+            const data = await r.json();
+            if (data.ok) {
+              extractStatus.value = '浏览器已启动，请在弹出的窗口中扫码登录抖音...';
+              const poll = setInterval(async () => {
+                try {
+                  const s = await fetch('/api/credentials/extract-status');
+                  const sd = await s.json();
+                  if (sd.status === 'success') {
+                    clearInterval(poll);
+                    extractRunning.value = false;
+                    extractStatus.value = '';
+                    extractScreenshot.value = '';
+                    extractResult.value = { success: true, message: '提取成功！共 ' + sd.count + ' 个 Cookie，已保存为 state.json' };
+                    status.state_file_exists = true;
+                  } else if (sd.status === 'failed') {
+                    clearInterval(poll);
+                    extractRunning.value = false;
+                    extractStatus.value = '';
+                    extractScreenshot.value = '';
+                    extractResult.value = { success: false, message: sd.error || '提取失败' };
+                  } else if (sd.status === 'waiting') {
+                    extractStatus.value = '等待登录中...请使用手机抖音扫码下方二维码登录（最长等待5分钟）';
+                    if (sd.screenshot) { loadExtractShot(sd.screenshot); }
+                  } else if (sd.status === 'starting') {
+                    extractStatus.value = '正在启动浏览器...';
+                  }
+                } catch(e) { console.error(e); }
+              }, 2000);
+            } else {
+              extractRunning.value = false;
+              extractStatus.value = '';
+              extractResult.value = { success: false, message: data.detail || '启动失败' };
+            }
+          } catch(e) {
+            extractRunning.value = false;
+            extractStatus.value = '';
+            extractResult.value = { success: false, message: '请求失败：' + e.message };
+          }
+        }
+        return {
+          tab,
+          navItems,
+          status,
+          isAutoPaused,
+          config,
+          messagesText,
+          contacts,
+          lastRunInfo,
+          totalContactCount,
+          selectedFriendCount,
+          sparkFriendCount,
+          filteredContacts,
+          searchKeyword,
+          logsContent,
+          extractRunning,
+          extractStatus,
+          extractResult,
+          extractScreenshot,
+          startExtract,
+          syncing,
+          savingLedger,
+          savingConfig,
+          ICONS,
+          formatTime,
+          loadAll,
+          runStreak,
+          syncContacts,
+          autoSelectSparkFriends,
+          clearSelectedFriends,
+          saveLedgerSelection,
+          saveConfigForm,
+          fetchLogs,
+          clearLogs,
+          handleFileUpload,
+          isMobile,
+          appVersion,
+          iosBanner,
+          showIOSBanner,
+          avatarProxy,
+          avatarErrors,
+          deleteFriend,
+          batchDeleteSelected,
+          emailCfg,
+          savingEmail,
+          testingEmail,
+          loadEmailConfig,
+          saveEmailForm,
+          sendTestEmail,
+          emailSubView,
+          openTab,
+          selectEmail,
+          emailBtnStyle
+        };
+      }
+    });
+
+    app.use(ElementPlus);
+    // 挂载前先显示 app（防止 v-cloak 类问题导致白屏）
+    const appEl = document.getElementById('app');
+    if (appEl) appEl.style.display = '';
+    app.mount('#app');
+    // 挂载后再次确保显示
+    setTimeout(() => {
+      const el = document.getElementById('app');
+      if (el) el.style.display = '';
+    }, 100);
+
+  </script>
+</body>
+</html>
